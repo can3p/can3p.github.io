@@ -1,0 +1,27 @@
+---
+layout: page
+title: Books
+subtitle: Reviews for books that are worth reading
+---
+
+<div class="links">
+  {% for post in site.categories.books %}
+    {% capture day %}{{ post.date | date: '%m%d%Y' }}{% endcapture %}
+    {% capture nday %}{{ post.next.date | date: '%m%d%Y' }}{% endcapture %}
+
+    {% if day != nday %}
+        <h2 class="link-date">{{ post.date | date_to_string }}</h2>
+    {% endif %}
+    <div class="link">
+
+      <h3 class="link-title"><a href="{{ post.url }}" target="_blank">{{ post.title }}</a></h3>
+
+      <div class="link-ref">
+        Book: <a href="{{ post.link }}" target="_blank">Amazon</a>
+      </div>
+      <div class="link-review">
+        {{ post.content }}
+      </div>
+    </div>
+  {% endfor %}
+</div>
