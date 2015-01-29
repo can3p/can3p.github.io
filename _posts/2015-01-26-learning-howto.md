@@ -7,8 +7,7 @@ category: blog
 I decided to write down my own thoughts and conclusions from the
 course "Learning how to learn" as a final project. My own part will
 represent some ideas that I have and that provide more context to
-the course on my opinion. Also I will try to end up with somewhat
-working and consistant plan for learning something new.
+the course on my opinion.
 
 First of all, the motivation part. Why do we learn? What do we learn?
 This term has a very broad definition and it's very easy to end up
@@ -95,27 +94,43 @@ It's very easy to solve simple problems but only finding solutions to difficult
 ones makes us smarter.
 
 The second important part for me is (self)explanation. I would say that
-it's a somewhat natural part of practicing.
+it's a somewhat natural part of practicing, but if with doing exercises you can
+find the limitations of the methods and ideas, with explaining ideas you
+can immediately see the parts that are still weak and are needed to be studied
+better.
 
-The third important part is the ability to switch off.
-
-If we have a strong goal that we want to reach, we can get a feeling that the
-closest way to do it is to devote as much time as possible to it. There was a
-lot of attention in the course to the diffuse mode and focused mode, and the
-thing is that you can still learn a lot in diffuse mode because the brain is
-processing information in the background even if you think that you're just
-waisting you time doing nothing. What I found really helpful and that was
-verified by several people in the course is that an ability to switch from the
-current topic to something different and not relevant really helps. It can be
-as simple as sitting in the sofa and watching tv, but it can also be a physical
-exerices and I find them even more helpful because with them you can still gain
-a lot. You can take any sport - swimming, running, maybe martial arts. It will
-be a very different exercise for your brain and I do believe that we can benefit
-a lot from doing different things. Besides allowing as to grow in several directions
-it also allow to fill the progress in different things you're doing and that
+The last thing is an ability to switch from the subject and be able to keep
+rhythm and relax. If we find the goal that we strongly want to achieve it's
+very tempting to try to bruteforce it and learn it through several very long
+sprints by devoting all energy to learning. The sad truth for me is that
+whenever I tried to do that I failed because I got exousted very soon after
+beginning. The correct way that really works for me is to develop the rhythm
+of doing something and try to do my best during scheduled hours and then switch
+to some very different task such as movies or (especially) physical exercises.
+A believe that doing sports involves very different parts of the brain that
+studies and sometimes I can really turn myself into kind of thoughtless mode
+when I just do what I do and all thoughts are shifted to the background. I think
+it exactly correlates with the diffuse thinking mentioned in the course. But
+for me it's not only the way to process information in the background. Switching
+activity is also a way to relax and besides allowing as to grow in several directions
+it also allows to fill the progress in different things you're doing and that
 helps to keep the motivation on the higher level.
 
-And here I want to dwell a bit on the procrastination.
+At the end I want to dwell a bit on the procrastination. I think all people face
+it at some level or another. Sometimes the task is not that pleasant to do or it's
+just too big to grasp or we're just tired or didn't get enough sleep. As was said
+in the course, for everyone there are cues that trigger something within us
+sending us to spend another twenty minutes in the facebook. But what's good is that
+we can build them to help us to work. Pomodorro technique is especially helpful in this
+sense that it puts the focus on the work. It may seem that 25 minutes is not that
+big time, but if you try to setup timer during the work, you can suddenly find out
+that in some days it can happen that you accomplish just two or three sets of pomodorro.
+Even with this technique there is still a room for emprovement and it's about planning.
+Simple todo list will help a lot, because you there will be no excuse that there is
+nothing to do and even it you are not in the best shape in this particular day you
+can just take one task after another and complete them even mechanically - anyway you
+still make a progress and you wouldn't otherwise.
 
-
-Thanks for your attention.
+I think I'll finish here. All the things described here are a prototype of my ongoing
+learning experiment. I really struggle to implement it in full scale in my life and
+will be very glad if anyone can find this document helpful in any sense.  Thanks for your attention.
