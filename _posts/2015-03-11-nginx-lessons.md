@@ -1,6 +1,6 @@
 ---
 layout: post
-title: Adopting Microservices at Netflix: Lessons for Team and Process Design
+title: "Adopting Microservices at Netflix: Lessons for Team and Process Design"
 link: http://nginx.com/blog/adopting-microservices-at-netflix-lessons-for-team-and-process-design/
 ref: https://news.ycombinator.com
 ref_title: Hacker News
