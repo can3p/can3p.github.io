@@ -149,6 +149,7 @@ Profiler showed that Chrome was really busy with garbage collecting
 and setting length of array to zero costed me around 100ms. Wow.
 
 Ok, I've tried to assign new array at the end of each loop pass:
+
 ```javascript
 var tmp = [];
 
@@ -318,6 +319,7 @@ lift('outputTo', function outputTo(data, el) {
 ```
 
 And the timing went to 5ms at firefox and less the one ms in Chrome.
+
 With all these optimisation the image processing part became barely
 noticable which is very good and opens space for more advanced
 filters that will run in a reasonable time now.
