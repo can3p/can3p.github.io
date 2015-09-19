@@ -7,13 +7,13 @@ permalink:        pretty
 
 # Setup
 title:            Dmitry Petrov
-url:              http://getpoole.com
+url:              http://can3p.github.io
 paginate:         1
 baseurl:          /
 author:
-  name:           Mark Otto
-  url:            https://twitter.com/mdo
-  email:          markdotto@gmail.com
+  name:           Dmitry Petrov
+  url:            https://can3p.github.io
+  email:          dpetroff@gmail.com
 
 # Custom vars
 version:          1.0.0

@@ -4,21 +4,4 @@ title: Blog
 subtitle: Random rants about everything
 ---
 
-<div class="links">
-  {% for post in site.categories.blog %}
-    {% capture day %}{{ post.date | date: '%m%d%Y' }}{% endcapture %}
-    {% capture nday %}{{ post.next.date | date: '%m%d%Y' }}{% endcapture %}
-
-    {% if day != nday %}
-        <h2 class="link-date">{{ post.date | date_to_string }}</h2>
-    {% endif %}
-    <div class="link">
-
-      <h3 class="link-title"><a href="{{ post.url }}" target="_blank">{{ post.title }}</a></h3>
-
-      <div class="link-review">
-        {{ post.content }}
-      </div>
-    </div>
-  {% endfor %}
-</div>
+<script>location = '/';</script>

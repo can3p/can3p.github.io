@@ -17,13 +17,23 @@
             {% endif %}
           {% endif %}
         </h3>
+        <div class="masthead-links">
+          <i class="fa fa-github"></i>
+          <a href="https://github.com/can3p">github.com/can3p</a>
+          <i class="fa fa-twitter"></i>
+          <a href="https://twitter.com/can3p">twitter.com/can3p</a>
+          <i class="fa fa-rss"></i>
+          <a href="{{ site.baseurl }}atom.xml">Atom feed</a>
+          <i class="fa fa-info"></i>
+          <a href="{{ site.baseurl }}about/">About</a>
+        </div>
       </div>
 
       {{ content }}
 
       <div class="footer">
         <p>
-          &copy; {{ site.time | date: '%Y' }}. All rights reserved.
+          &copy; {{ site.time | date: '%Y' }} Dmitry Petrov
         </p>
       </div>
     </div>

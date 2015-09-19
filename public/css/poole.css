@@ -320,6 +320,14 @@ tbody tr:nth-child(odd) th {
   letter-spacing: 0;
 }
 
+.masthead-links .fa {
+    margin-left: 20px;
+}
+
+.masthead-links .fa:first-child {
+    margin-left: 0;
+}
+
 
 /*
  * Posts and pages
