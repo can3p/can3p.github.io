@@ -305,6 +305,13 @@ tbody tr:nth-child(odd) th {
   padding-bottom: 1rem;
   margin-bottom: 3rem;
 }
+
+@media (max-width: 400px) {
+  .masthead {
+    margin-bottom: 0rem;
+  }
+}
+
 .masthead-title {
   margin-top: 0;
   margin-bottom: 0;
@@ -320,12 +327,31 @@ tbody tr:nth-child(odd) th {
   letter-spacing: 0;
 }
 
-.masthead-links .fa {
-    margin-left: 20px;
+.masthead-links {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
 }
 
-.masthead-links .fa:first-child {
+.masthead-links__link {
+    white-space: nowrap;
+    margin-left: 10px;
+}
+
+.masthead-links__link:first-child {
     margin-left: 0;
+}
+
+@media (max-width: 400px) {
+  .masthead-links {
+    margin-bottom: 1rem;
+    display: block;
+  }
+
+  .masthead-links__link {
+    display: block;
+    margin-left: 0;
+  }
 }
 
 
@@ -442,6 +468,13 @@ a.pagination-item:hover {
   color: #bbb;
   margin-left: -30px;
   margin-top: 2rem;
+}
+
+@media (max-width: 800px) {
+  .link-date {
+    fony-size: 1.1em;
+    margin-left: 5px;
+  }
 }
 
 .link-review {
