@@ -16,8 +16,9 @@ title: Random rants about everything
       <h3 class="link-title"><a href="{{ post.url }}">{{ post.title }}</a></h3>
 
       <div class="link-review">
-        {{ post.content }}
+        {{ post.excerpt }}
       </div>
+      <div><a href="{{ post.url }}">Read more</a></div>
     </div>
   {% endfor %}
 </div>
