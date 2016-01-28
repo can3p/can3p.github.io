@@ -1,6 +1,7 @@
 ---
 layout: post
 title: "Advent of code quiz reflections"
+keywords: "advent of code, clojure"
 category: blog
 ---
 

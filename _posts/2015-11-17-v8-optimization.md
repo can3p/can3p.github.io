@@ -1,6 +1,7 @@
 ---
 layout: post
 title: "Optimizing code for V8"
+keywords: "javascript, browser, google chrome, node.js, v8"
 category: blog
 ---
 

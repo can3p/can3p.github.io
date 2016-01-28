@@ -1,6 +1,7 @@
 ---
 layout: post
 title: "clj-carbonapi internals"
+keywords: "graphite, clojure, carbonapi, metrics, JFreeChart, Incanter"
 category: blog
 ---
 
