@@ -9,11 +9,11 @@ title: Random rants about everything
     {% capture nday %}{{ post.next.date | date: '%m%d%Y' }}{% endcapture %}
 
     {% if day != nday %}
-        <h2 class="link-date">{{ post.date | date_to_string }}</h2>
+        <div class="link-date">{{ post.date | date_to_string }}</div>
     {% endif %}
     <div class="link">
 
-      <h3 class="link-title"><a href="{{ post.url }}">{{ post.title }}</a></h3>
+      <h2 class="link-title"><a href="{{ post.url }}">{{ post.title }}</a></h2>
 
       <div class="link-review">
         {{ post.excerpt }}
