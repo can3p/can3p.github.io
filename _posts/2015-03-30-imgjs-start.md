@@ -40,7 +40,7 @@ more because the only requirement is equality of R, G and B values for each pixe
 at the end. I took the path of luminosity approach. I have no idea about where
 the coefficients come from, but here is the first naive implementation:
 
-```javascript
+~~~ javascript
 lift('grayscale', function grayscale(data) {
   var new_data = create_image_data(data.width, data.height);
   var cur_pos, new_pos;
@@ -66,15 +66,15 @@ lift('grayscale', function grayscale(data) {
 
   return new_data;
 });
-```
+~~~
 
 Here is the client code to run this:
 
-```javascript
+~~~ javascript
 img('./test.jpg')
   .grayscale()
   .outputTo(document.querySelector('.output'));
-```
+~~~
 
 The facts to mention here is that:
 
@@ -89,7 +89,7 @@ matrix multiplication.
 
 Wouldn't it be nice if I'll just right this:
 
-```javascript
+~~~ javascript
 lift('grayscale2', function grayscale2(data) {
   var new_data = clone_image_data(data);
 
@@ -98,11 +98,11 @@ lift('grayscale2', function grayscale2(data) {
                                      [0.21, 0.72, 0.07, 0],
                                      [0   , 0,    0,    1] ]);
 });
-```
+~~~
 
 Here is the first implementation of `multiply_matrix` function:
 
-```
+~~~ javascript
 export function multiply_matrix(data, matrix) {
   if (matrix.length !== 4 || matrix.filter( (el) => el.length !== 4 ).length > 0)
     throw new Error("filter matrix can be only 4 by 4");
@@ -131,7 +131,7 @@ export function multiply_matrix(data, matrix) {
 
   return data;
 }
-```
+~~~
 
 The main problem with it was the performance (grayscale2: around 350ms
 and grayscale around 125ms on my MBP for [1024x768
@@ -150,7 +150,7 @@ and setting length of array to zero costed me around 100ms. Wow.
 
 Ok, I've tried to assign new array at the end of each loop pass:
 
-```javascript
+~~~ javascript
 var tmp = [];
 
 for (let pos = 0; pos < max; ++pos) {
@@ -171,7 +171,7 @@ for (let pos = 0; pos < max; ++pos) {
 
   tmp = [];
 }
-```
+~~~
 
 The perfomance fell to miserable 550ms but very fun fact was
 that profiler didn't show anything specific and garbage collection
@@ -180,7 +180,7 @@ was reducde by and order of magnitude.
 Ok, let's try to go from the other side and not reset the length of
 array at all. Memory is cheap.
 
-```javascript
+~~~ javascript
 var tmp = [];
 
 for (let pos = 0; pos < max; ++pos) {
@@ -199,7 +199,7 @@ for (let pos = 0; pos < max; ++pos) {
     data.data[real_pos + comp] = tmp[real_pos + comp];
   }
 }
-```
+~~~
 
 And it was the first success: around 260ms! Much better but still not
 as good as the original thing.
@@ -218,9 +218,9 @@ that was with it right after install before updates happened.
 Also you can pass parameters right to the v8 engine and get all
 sorts of debug output.
 
-```bash
+~~~ bash
 /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --user-data-dir="/tmp/chrome_dev" --js-flags="--trace-opt --trace-deopt --trace-bailouts"
-```
+~~~
 
 Here --user-data-dir option will give the fresh instance (even if there is
 a running one) and --js-flags will be passed to v8.
@@ -233,7 +233,7 @@ on Mozilla Hacks.
 
 I decided to start with just Uint8ClampedArray:
 
-```javascript
+~~~ javascript
 var buf = new ArrayBuffer(data.data.length);
 var buf8 = new Uint8ClampedArray(buf);
 
@@ -251,12 +251,12 @@ for (let pos = 0; pos < max; ++pos) {
 }
 
 data.data.set(buf8);
-```
+~~~
 
 It gave me blazing 120ms, as fast as original, but I was curious
 about using Uint32Array and decided to try it:
 
-```javascript
+~~~ javascript
 var buf = new ArrayBuffer(data.data.length);
 var buf8 = new Uint8ClampedArray(buf);
 var buf32 = new Uint32Array(buf);
@@ -273,7 +273,7 @@ for (let pos = 0; pos < max; ++pos) {
 }
 
 data.data.set(buf8);
-```
+~~~
 
 I'm not detecting endiannes here just measuring speed. And measurements
 gave me the incredible 20-25ms, five times faster than original function!
@@ -284,7 +284,7 @@ I decided to stop there for a while.
 Another speedup I got at the image rendering at the end. At first I
 wanted to get a proper img tag at the end and my code looked like this:
 
-```javascript
+~~~ javascript
 lift('outputTo', function outputTo(data, el) {
   var c = document.createElement('canvas');
   c.width = data.width; c.height = data.height;
@@ -298,14 +298,14 @@ lift('outputTo', function outputTo(data, el) {
   el.innerHTML = '';
   el.appendChild(node);
 });
-```
+~~~
 
 Chrome on averaged spend up to 200ms on this and at least half of this
 time was spend on the toDataUrl method execution. Firefox
 behaved even worse with 600ms. It was too bad and I decided
 to drop image part for now and output just canvas:
 
-```javascript
+~~~ javascript
 lift('outputTo', function outputTo(data, el) {
   var c = document.createElement('canvas');
   c.width = data.width; c.height = data.height;
@@ -316,7 +316,7 @@ lift('outputTo', function outputTo(data, el) {
   el.innerHTML = '';
   el.appendChild(c);
 });
-```
+~~~
 
 And the timing went to 5ms at firefox and less the one ms in Chrome.
 

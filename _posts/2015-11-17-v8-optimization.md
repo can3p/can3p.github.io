@@ -17,13 +17,13 @@ So, first I decided that I wanted to measure how fast the code was to be able to
 understand if I do any progress at all. console.time api is a very good way to
 do it:
 
-```javascript
+~~~ javascript
 console.time('mycode');
 
 // ... code to be measured
 
 console.timeEnd('mycode');
-```
+~~~
 
 With this I can see if I do any better with the changes I introduce, the only
 thing is that execution time is not deterministic and it always makes sense to
@@ -35,14 +35,14 @@ to be _hot_ (executed many times through the program run) and compiles it to the
 machine code. This has it's own implications, e.g. people like to do benchmarks
 like this:
 
-```javascript
+~~~ javascript
 
 // ok, let's test the perf of implementation
 
 for (var try = 0; try < 100000; try++) {
   superfunc();
 }
-```
+~~~
 
 As you see, the average execution time of this function can be affected by V8
 implementation details. The other thing is that not all code can be optimized

@@ -60,13 +60,13 @@ Takes any number of functions and returns new function that will return
 true only if all the functions return true with arguments passed. Very useful
 to write conditions in compact way:
 
-```clojure
+~~~ clojure
 (def ans1 (count (filter
                   (every-pred has-wovels
                               has-double
                               has-good)
                   (str/split input #"\n"))))
-```
+~~~
 
 ### [partition](http://clojuredocs.org/clojure.core/partition)
 
@@ -79,12 +79,12 @@ between sequence items.
 
 Here is an example:
 
-```clojure
+~~~ clojure
 (def chmap (apply hash-map
                   (flatten (partition 2 1
                            (concat (char-range \a \z)
                                    (list \a))))))
-```
+~~~
 
 This expression generates a hashmap with keys that are individual characters
 and the values that are the charecters that alphabetically follow them, except

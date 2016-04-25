@@ -14,7 +14,7 @@ things certain way and it doesnt (usually) get me into trouble.
 When you start writing markup you're all about semantics and
 compact code. Isn't it beautiful?
 
-```html
+~~~ html
 <body>
     <header>
         <h1>My blog</h1>
@@ -28,11 +28,11 @@ compact code. Isn't it beautiful?
 ...
 
 </body>
-```
+~~~
 
 Yeah, it is. And maybe it even makes sence if you're working on the site
 alone, or you're planning to ship it to the client and run away because this
-kind of markup implies selectors like ```section header h2 {}```. And while
+kind of markup implies selectors like `section header h2 {}`. And while
 it looks nice and concise, things start breaking after you develop more than
 one page with shared styles and a product owner who always wants to see this
 block a little bit different.
@@ -44,7 +44,7 @@ of them are inline and others are block-level. No, actually there are just
 elements and there is css that can make anything you like. If I were to write
 the same markup today, most probably I would come up with something like this:
 
-```html
+~~~ html
 <body>
     <div class="header">
         <h1 class="header__title">My blog</h1>
@@ -58,11 +58,11 @@ the same markup today, most probably I would come up with something like this:
 ...
 
 </body>
-```
+~~~
 
 Unique classnames, selectors with the lowest specificity possible. Doesn't look
 beautiful, but I know for sure, that I won't get into troubles with selector clashes,
-my css won't consist on 50% of ```!important``` rules and since ```span``` and ```div```
+my css won't consist on 50% of `!important` rules and since `span` and `div`
 element don't get any default styles from the browser they usually have an overwhelming
 majority on the page.
 
@@ -70,7 +70,7 @@ The second benefit is that I can always move blocks around without breaking too 
 stuff, nest blocks into each other etc. Nesting part is a tricky one, because browser
 doesn't really think that elements are the same. Here is the code:
 
-```html
+~~~ html
 <div class="content">
     <p class="content-head">
     We start good
@@ -78,7 +78,7 @@ doesn't really think that elements are the same. Here is the code:
     Ouch
     </p>
 </div>
-```
+~~~
 
 Apart from the fact that div looks odd inside of the span, what can go wrong?
 Here is what browser thinks ([codepen example](http://codepen.io/can3p/pen/RryEZO)):
@@ -89,7 +89,7 @@ Yeah, semantics.
 
 The other nesting pitfall that is possible to get into is with forms([codepen](http://codepen.io/can3p/pen/OMZrQP)):
 
-```html
+~~~ html
 <form id="form1" action="/post">
     <input name="test">
     <form id="i-dont-know-how-i-got there" action="/get">
@@ -97,7 +97,7 @@ The other nesting pitfall that is possible to get into is with forms([codepen](h
         <input name="password">
     </form>
 </form>
-```
+~~~
 
 ![omg](/public/img/2016-01-28-markup-bugs/nested_forms.png)
 
@@ -105,7 +105,7 @@ The last one is my personal favourite, because the misbehaviour
 can be introduced a loong time before you will introduce the changes
 that actually trigger the bug:
 
-```html
+~~~ html
 <div>
 <form id="form1" action="/post">
     <input name="test">
@@ -115,9 +115,9 @@ that actually trigger the bug:
     <span id="spacer"></span>
 </form>
 </div>
-```
+~~~
 
-Mind the closing ```</div>``` in the middle of the form. It can really happen
+Mind the closing `</div>` in the middle of the form. It can really happen
 if you have a huge project with lots of nested templates. Here is inspector view:
 
 ![oh no](/public/img/2016-01-28-markup-bugs/form_div_intersect.png)
@@ -127,9 +127,9 @@ that it still belongs to form (check [another codepen](http://codepen.io/can3p/p
 
 The bug becomes visible if you insert another input dynamically, like this:
 
-```javascript
+~~~ javascript
 document.querySelector('#spacer').innerHTML = '<input id="out" name="out">';
-```
+~~~
 
 This input won't belong to the form at all ([codepen](http://codepen.io/can3p/pen/OMZray)).
 
@@ -138,4 +138,4 @@ already fixed DOM tree and the element is inserted outside of the form, but it c
 quite some time to spot this in a huge codebase.
 
 Forgot to mension, ids are here only for test purposes and ideally should be used only
-in situations where html spec wants them (like ```<label for="" />```).
+in situations where html spec wants them (like `<label for="" />`).
