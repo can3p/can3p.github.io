@@ -57,9 +57,9 @@ two companies that use common lisp at the moment. Most of other examples
 are really dated and are not proved by relevant sites
 - Most of libraries are old. Another evidence on how small community is. Most
 libraries I found to use had latest release several years ago. Let's have
-a look: (s-xml-rpc)[http://quickdocs.org/s-xml-rpc/] - latest release in 2010,
-(cl-markdown)[http://quickdocs.org/cl-markdown/] - 2010, (md5)[http://quickdocs.org/md5/] - 2015 which is very recent.
-- Very fragmented documentation. I mostly used (cl cookbook)[http://cl-cookbook.sourceforge.net/], quickdocs.org and (Practical Common Lisp)[http://www.gigamonkeys.com/book/] book.
+a look: [s-xml-rpc](http://quickdocs.org/s-xml-rpc/) - latest release in 2010,
+[cl-markdown](http://quickdocs.org/cl-markdown/) - 2010, [md5](http://quickdocs.org/md5/) - 2015 which is very recent.
+- Very fragmented documentation. I mostly used [cl cookbook](http://cl-cookbook.sourceforge.net/), quickdocs.org and [Practical Common Lisp](http://www.gigamonkeys.com/book/) book.
 
 If we're talking about ecosystem, then:
 - quicklisp is great, but every project still has to have several files to describe
