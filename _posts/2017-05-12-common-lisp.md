@@ -326,7 +326,7 @@ API.registerWidget("Widget", Widget)
 
 Is there any code duplication there? In javascript you'll say that there isn't
 since all the lines are the necessary boilerplate to make things work. Let's
-image a perfect world and choose the best syntax for this case. Wouldn't it be
+imagine a perfect world and choose the best syntax for this case. Wouldn't it be
 nice to write something like this?
 
 ~~~ javascript
@@ -362,7 +362,7 @@ and not as a simple substitute.
 ## Conclusion
 
 I hope I’ve made a showcase for CL and you’re interested to try it out if you
-haven’t before. It’s not all roses and I have to give a word of warning there -
+haven’t done it before. It’s not all roses and I have to give a word of warning there -
 the situation with documentation is mediocre, even some popular libraries can have
 problems there, there is plenty of outdated code or broken home pages. The language
 itself has duplication in some parts like mapping functions or binding variables
@@ -370,7 +370,7 @@ and lacks some essentials like complete library to work with strings, community
 is much smaller than in any hype language.
 
 On the other side there are libraries to compensate shortcomings of standard
-labrary and many interesting projects in different areas, some of them are
+library and many interesting projects in different areas, some of them are
 really brilliant (see [Mezzano](https://github.com/froggey/Mezzano) as an
 example).
 
