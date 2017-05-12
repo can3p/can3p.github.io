@@ -325,7 +325,7 @@ API.registerWidget("Widget", Widget)
 ~~~
 
 Is there any code duplication there? In javascript you'll say that there isn't
-since all the lines are the necessary boilerplate to make things working. Let's
+since all the lines are the necessary boilerplate to make things work. Let's
 image a perfect world and choose the best syntax for this case. Wouldn't it be
 nice to write something like this?
 
