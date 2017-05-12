@@ -110,7 +110,7 @@ interface from day one - write cli interface, make assumptions about the structu
 of data and prepare some stubs, understand how this data gets into the program
 and back from it. Depending on requirements it can take few hours or few days to
 get this fully working, and that’s the time you could spend on solving the main
-problems.
+problem.
 
 Anyway, after finishing with that you get into a usual cycle of development. You
 make a change, change all the data storage etc. to accommodate for new data
@@ -126,8 +126,8 @@ and write necessary business logic, all the stubs can be generated
 programmatically and put into the variables as you go, No cli interface is
 necessary. While being attached to the process it’s possible to access any
 package, inspect any variable, change any data structure and define or change
-any new function. That means that change cycle is reduced to change code ->
-recompile function and all proper interface is moved to a later stage.
+any new function. That means that change cycle is reduced to `change code ->
+recompile function` and all proper interface is moved to a later stage.
 
 All this does not deny testing, it’s just that you do not rely only on it and
 can have much quicker troubleshooting cycle. Moreover, in many cases you can
@@ -138,12 +138,12 @@ language data structures. Btw, this is another advantage which is everywhere in
 common lisp - in many cases you don't need to parse strings or invent
 serialization formats you can easily use language data structures.
 
-If you remember how I explained development process, that’s actually how any
-program works - lisp process starts, loads and compiles some lisp code and runs
-some function on it. Why it works like this is because CL is an image based
-language - during the interactive development session developer shapes the program
-to a particular state where he can dump the image into a binary file and this is a
-default way of compiling programs in common lisp.
+That’s actually how any lisp program works - lisp process starts, loads and
+compiles some lisp code and runs some function on it. Why it works like this is
+because CL is an image based language - during the interactive development
+session developer shapes the program to a particular state where he can dump
+the image into a binary file and this is a default way of compiling programs in
+common lisp.
 
 ~~~ common_lisp
 (ql:quickload 'trivial-dump-core 'your-awesome-project)
@@ -237,7 +237,7 @@ Another advantage is that with generics we get another way to group
 functionality - around functionality and not around objects.
 
 As if that wasn’t enough generic functions come with a complete support of
-aspect-oriented programming with :before, :after and :around modifiers.  That
+aspect-oriented programming with `:before`, `:after` and `:around` modifiers.  That
 adds yet another direction of extension and may libraries and common lisp as a
 language define generic functions as external api so that clients can add hooks
 in to particular points in the program without  passing lambdas around.
