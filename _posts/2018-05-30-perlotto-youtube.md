@@ -5,6 +5,9 @@ keywords: "javascript, node.js, electron"
 category: blog
 ---
 
+*Ouch*: This post was supposed to be published back in September '17, but I
+saved it in a future date. Here you go, anyway.
+
 One more update about [Perlotto][1] app (last update is [here][2]). I decided
 to work on it again, because of annoyance I felt from using youtube in web
 browser. It's just dumb to go from a decent players we all had to a web
