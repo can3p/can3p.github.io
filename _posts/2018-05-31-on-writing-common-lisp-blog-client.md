@@ -79,7 +79,7 @@ an obvious way to implement client is to make a cli tool for that. And if you
 check requirement you'll spot that they resemble typical git operations a lot
 and it makes sense to mimic git when it makes sense.
 
-## Implementation
+## Common Lisp nontrivialities
 
 When you start working on a really big task, the only thing that can be said
 for sure is that there are a lot of unknowns. And if in a familar language
@@ -290,18 +290,102 @@ downloads.
 ### Editing
 
 One last bit of user input! What I wanted to do is to allow to invoke
-a user editor in case it's necessary from the cli tool. That also apppeared
-to be not so trivial, because actual implementation differs by common lisp
-implementation used.
+a user editor (set by `$EDITOR` environment variable in case it's
+necessary from the cli tool. That also apppeared to be not so trivial,
+because actual implementation differs by common lisp implementation
+used.
 
 Fortunately, I found [magic-ed][magic-ed] on gitub and it magically
 did the right thing. Quicklisp didn't have it and I ended up including
 it in my code to simplify build process
+
+### Pre-commit hook
+
+This one is not really common lisp specific, but it turned out to be pretty
+useful. What I really wanted to do is to use the client with git to
+have all my posts under version control. In this case the best ever
+flow looks like this:
+
+~~~bash
+$ cl-journal new post-slug
+$ # thanks to magic-ed editor opens and you can write your beautiful post
+$ git add . && git commit -m "another post"
+~~~
+
+After that new post file along with all the generated metadata should be
+included in the commit. A trick there is to include all changes in the
+pre-commit hook. Aparently git allows that. Here is how current cl-journal
+pre-commit hook looks like:
+
+~~~bash
+#!/usr/bin/env bash
+cl-journal push
+git add posts.lisp
+~~~
+
+## Client logic
+
+There are a lot of different bits related to the client that were pretty
+fun to solve, especially in order to get git-like behaviour, but nothing
+of that matters if we cannot communicate with the server, so let's start
+with that.
+
+### XMLRPC
+
+Livejournal uses XMLRPC as a protocol for communication. Documentation is
+[old][xml-rpc] but serves it's purpose. However I had to check the last
+opensource version of the protocol implementation to make sense out of
+it for a back sync functionality. I'll return to it later, but now let's
+see how that can be done at all.
+
+I looked for a library to use and initially my choise was
+[s-xml-rpc][s-xml-rpc]. I don't remember exactly why I decided to get
+rid of it. I think it was due to the fact that s-xml-rpc returns result
+in term of hierarchy of objects and it proved to be difficul to maintain.
+
+Instead of that I've settled with [rpc4cl][rpc4cl] which simply returns
+a nested list and that's precisely what I need. To simplify the code
+I made s simple wrapper that takes adds host information to every call:
+
+~~~lisp
+(defun rpc-call (method &rest method-parameters)
+  (apply #'rpc4cl:rpc-call *service-endpoint*
+         nil nil method method-parameters))
+~~~
+
+After that all remote calls naturally fit into the code. Here is as
+example a sub to get a so colled challenge from livejournal service:
+
+~~~lisp
+(defun getchallenge ()
+  (->
+   (rpc-call "LJ.XMLRPC.getchallenge")
+   (getf :challenge)))
+~~~
+
+Please note `->` from [cl-arrows][cl-arrows] here. I seriously cannot
+imagine my lisp coding with it, because using the arrow prevents all
+sorts of deep nestings and keeps code clear. Since it's not always easy
+to remember in which place previous result goes by default in the last
+code I always use `-<>` instead which allows to put a placeholder `<>`
+that will be replace with result. This way makes argument placing more
+explicit. As an example `getchallenge` can be transformed to this:
+
+~~~lisp
+(defun getchallenge ()
+  (-<> "LJ.XMLRPC.getchallenge"
+   (rpc-call <>)
+   (getf <> :challenge)))
+~~~
+
 
 [roswell script]: https://github.com/can3p/cl-journal/blob/master/roswell/cl-journal.ros
 [buildapp script]: https://github.com/can3p/cl-journal/blob/master/Makefile
 [main package]: https://github.com/can3p/cl-journal/blob/master/src/main.lisp
 [cl-brewer]: https://github.com/can3p/cl-brewer
 [magic-ed]: https://github.com/sanel/magic-ed
-
+[xml-rpc]: https://www.livejournal.com/doc/server/ljp.csp.xml-rpc.protocol.html
+[s-xml-rpc]: https://common-lisp.net/project/s-xml-rpc/
+[rpc4cl]: https://github.com/pidu/rpc4cl
+[cl-arrows]: https://github.com/nightfly19/cl-arrows
 
