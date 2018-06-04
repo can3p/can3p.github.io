@@ -378,6 +378,36 @@ explicit. As an example `getchallenge` can be transformed to this:
    (getf <> :challenge)))
 ~~~
 
+One of the distinctive features of Common Lisp is it's live editing
+process where one can start interpreter, load necessary code there
+and do all the changes right in it compiling changed functions if necessary
+without a need to compile and start program all over again.
+
+In case of API it's particularly useful. I defined three dynamic
+variables - `*service-login*`, `*service-password*`, `*service-endpoint*`.
+I set them once the repl starts and after that I can do any experimentation
+with the api with help of all the power the language provides. And after
+I [wrapped][lj-api] all service endpoints as functions I literally could
+do all blog manipulations without leaving the editor. It proved
+to be so useful that I kept the running lisp process for months without
+any need for restart.
+
+The only improvement I made recently was to add unit tests into the
+toolbox and it works wonderfully with repl-driven development. Why is
+it cool?  With usual way of developing one of the hardest bits is to
+recreate an environment where tests happen, and in cases where there
+is no obvious way to implement something, changing implementation can
+have a lot of impact on how test are written. With Common Lisp I can
+experiment with code freely until I get something working without
+overhead related to environment and create supporting architecture
+only after that and I ca still run all the tests right there! Change a
+function and recompile only one specific test till everything works
+and then compile the whole suite to see if everything's in place.
+
+I'll take about this bit more later, it's so fascinating that I can
+safely say that it's one of the features that really make me stick
+to the language, I enjoy every second of it.
+
 
 [roswell script]: https://github.com/can3p/cl-journal/blob/master/roswell/cl-journal.ros
 [buildapp script]: https://github.com/can3p/cl-journal/blob/master/Makefile
