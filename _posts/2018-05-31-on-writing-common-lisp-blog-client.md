@@ -685,7 +685,137 @@ we can print any information we like from the object instance.
   (format stream "<post filename:~a url:~a>~%" (filename post) (url post)))
 ~~~
 
-The last bit before implementing cli interface is a state management
+The last bit before implementing cli interface is a state management and
+it can also be easily implemented using the same operations on `<post>`
+and `<post-file>` objects.
+
+What do I mean by state management? Looking at the blog folder we should
+be able to understand which posts are new, updated deleted or are drafts
+and they all are defined in different terms:
+
+* New post is the one that exists in the folder but is not mentioned in
+  the database
+* Deleted post is the one that does not exist in folder, but does exist
+  in database
+* Modified post is that one that exists in both places, however it's
+  recorded timestamp is lower than last modification timestamp of file
+  on the disk
+* The draft is a file in folder that has a field `draft: 1` in the header
+
+What they all share is that they all have a function that is able to
+generate a list of items of specific kind and a set of messages to be
+printed depending on a number of items got in the previous step. Of
+course line can be printed different from case to case.
+
+For example, we can have a following output:
+
+~~~
+There a drafts file
+
+    2018-06-04-books29.md
+
+There is a new file to publish
+
+    2018-06-06-test.md
+
+There are 2 modified files to update
+
+    2009-10-12-no-title.md
+    2013-12-31-eshe-odin.md
+
+There is a deleted file to unpublish
+
+    2011-01-23-no-title.md
+~~~
+
+Let's taks drafts as an example. Here is a function to retrieve a list:
+
+~~~lisp
+(defun get-draft-files ()
+  (->> (get-markdown-files)
+       (remove-if #'(lambda (fname) (get-by-fname *posts* fname)))
+       (mapcar #'read-from-file)
+       (remove-if-not #'draft)
+       (mapcar #'filename)
+       ))
+~~~
+
+`cl-arrows` rocks again there. What happens is that we get a list of all
+markdown files in the folder, remove any files that exist in database,
+parse the reminder, kick out all files that do not contain the mentioned
+field and retrieve filenames back from `filename` slot in resulting
+`<post-file>` objects. Not that performant, I know, but it doesn't really
+matter on a this scale and my main aim was correctness and readability,
+not speed.
+
+Once we have a list, we need to have a pretty printer for it and it should
+be similar for all the cases. At this point in time I decided to test
+my defmacro-fu and came up with a macro, that looks like this:
+
+~~~lisp
+(with-files draft (get-draft-files)
+  "There are ~a drafts files~%"
+  "There a drafts file~%"
+  "No drafts found~%")
+~~~
+
+What this macro does is it generates another function named using
+second argument (it'll be `with-draft-files` in this case) and that
+function will print one of the strings depending on the number of items
+from the second argument (`(get-draft-files)` in this case) and print
+a list of items in a specified manner. The resulting `print-status`
+function looks very clean after all these manipulations:
+
+~~~lisp
+(defun print-status ()
+  (flet ((print-names (items)
+           (format t "~%~{    ~a~^~%~}~%~%" (mapcar #'filename items)))
+         (print-string-names (items)
+           (format t "~%~{    ~a~^~%~}~%~%" items))
+         )
+    (with-draft-files #'print-string-names)
+    (with-new-files #'print-names)
+    (with-modified-files #'print-names)
+    (with-deleted-files #'print-names)
+    (with-fetched-files #'print-string-names)))
+~~~
+
+I use one or another printing funciton depending on what is produced but
+the `with-*` function, it can be a plain list of filenames or a list
+of `<post>` instances or anything else and I don't need to worry about
+it at the generation step and have all the flexibility to do it
+at printing step, view layer is separate!
+
+Speaking of modified posts. Whenever I publish a post I run
+`get-universal-time` and record it along the filename. Then it takes
+a super simple predicate to check whether particular post is modified:
+
+~~~lisp
+(defmethod modified-p ((post <post>))
+  (let ((fname (filename post)))
+    (and
+     (probe-file fname)
+     (< (or (ignored-at post) (updated-at post) (created-at post))
+        (file-write-date fname)))))
+~~~
+
+You see `file-write-date` function there. This logic works really well
+if no one touches files, however whenever files get moved or repo gets
+clone to anther location, timestamp from it gets distorted and all files
+are marked as modified. This is precisely the reaon of `ignored-at` field
+there. Whenever I want to mark all the files as uptodate I run this
+function:
+
+~~~lisp
+(defun ignore-all ()
+  (let ((ts (get-universal-time)))
+    (loop for post in (posts *posts*) do
+          (setf (ignored-at post) ts))
+    (save-posts)))
+~~~
+
+This was one of the first times I used `loop` macro and I really fell in
+love with it some time after that.
 
 
 
