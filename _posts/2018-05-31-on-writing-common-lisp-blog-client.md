@@ -653,6 +653,40 @@ call. The most interesting part of it is `get-password` that not just
 retrieves the password, but it also requests and saves it in case of
 absence.
 
+And this is it about general client framework. With a list of `<post>`
+objects in the database we can do all sorts of calculations and answer
+to all sorts of interesting questions especially because there is a
+direct connection with corresponding file on disk that can be converted
+to `<post-file`> at will.
+
+How can I get the last published post? Easy:
+
+~~~lisp
+(defun get-last-published-post (db)
+  (car (sort (posts db) #'> :key #'created-at)))
+~~~
+
+How can I know the title of particular `<post>`? Super easy:
+
+~~~lisp
+(defmethod title ((post <post>))
+  (title (read-from-file (filename post))))
+~~~
+
+And that's just two examples, it's always possible to start the repl,
+load a posts database from file manually and start playing with contents.
+
+To make repl experience even more pleasant common lisp provides `print-object`
+generic that is responsible for the text representation of the object. Hence
+we can print any information we like from the object instance.
+
+~~~lisp
+(defmethod print-object ((post <post>) stream)
+  (format stream "<post filename:~a url:~a>~%" (filename post) (url post)))
+~~~
+
+The last bit before implementing cli interface is a state management
+
 
 
 
