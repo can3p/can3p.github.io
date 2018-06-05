@@ -185,6 +185,10 @@ As you see, `*default-pathname-defaults*` and  `(uiop/os::chdir "second_folder")
 for both standard library and external calls it's necessary to call them
 both.
 
+It's worth saying that this distinction is of particular importance for
+repl based development, because when image starts these two values are
+most probably aligned.
+
 Since I mentioned `uiop/run-program`, let's talk about it.
 
 ### User input
@@ -408,6 +412,250 @@ I'll take about this bit more later, it's so fascinating that I can
 safely say that it's one of the features that really make me stick
 to the language, I enjoy every second of it.
 
+### Storage
+
+I wrote the client primarily for myself and I didn't want to invest
+into security more than a secure password storage that was achieved
+but external tools. I wanted some storage however.
+
+First things first I decided to have a class that represents a posts
+database, that looks like this:
+
+~~~lisp
+(defclass <db> ()
+  ((posts :initarg :posts :accessor posts)
+   (version :initarg :version :reader version)
+   (login :initarg :login :reader login)
+   (raw-text :initarg :raw-text :reader raw-text)
+   (service :initarg :service :reader service)
+   (service-endpoint :initarg :service-endpoint :reader service-endpoint)
+   (fetch-store :reader fetch-store)
+   ))
+~~~
+
+That's the most recent version of course, the most minimal version contained
+only `posts` slot and thanks to the lisp interactivity more slots could be
+added by class recompilation and all the live instances got new slots
+automatically.
+
+Anyway, as a next step I wanted to serialize the database and it's contents
+and store it into file. This is very common lisp generics step in. They
+are completely orthogonal to classes and make it super simple to do all
+sorts of recursive definitions for particular functionality. In this
+case I defined a generic `to-list` and wrote it's implementation for
+the database:
+
+~~~lisp
+(defmethod to-list ((db <db>))
+  `(:login ,(login db)
+    :version 2
+    :service ,(service db)
+    :raw-text ,(raw-text db)
+    :service-endpoint ,(service-endpoint db)
+    :posts ,(mapcar #'to-list (posts db))))
+~~~
+
+To make this method work completely I had to only implement this method
+for post `<post>` class, which I did.
+
+~~~lisp
+(defmethod to-list ((post <post>))
+  (list
+   :itemid (itemid post)
+   :anum (anum post)
+   :ditemid (ditemid post)
+   :url (url post)
+   :created-at (created-at post)
+   :updated-at (updated-at post)
+   :ignored-at (ignored-at post)
+   :server-changed-at (server-changed-at post)
+   :synced-from-fetch (synced-from-fetch post)
+   :log-ts (log-ts post)
+   :filename (filename post)
+   :journal (journal post)
+   ))
+~~~
+
+Super simple, after that saving database to a file became trivial:
+
+~~~lisp
+(defun save-posts ()
+  (with-open-file (out *posts-file*
+                       :direction :output
+                       :if-exists :supersede)
+    (with-standard-io-syntax
+      (pprint (to-list *posts*) out))))
+~~~
+
+`*posts*` here is an another global var that holds a reference to the
+open database and *posts-file* is a relative path pointing where posts
+file should live.
+
+What happens in the sub is that we prettry print s-expression that happens
+to be a result of `to-list` method call into a stream that happens to be
+an open file. `with-standard-io-syntax` macro ensures that all the dynamic
+variables are reset to their default state for the time of printing.
+
+After this is done we can use yet another common lisp feature that
+makes it trivial to save changes on all meaningful actions. Common lisp
+supports aspect oriented programming in sense of auxilary methods. That
+means that for any generic function we can hook in to any point during
+it's call. I had generics for publishing, updating and deleting the post
+and all save logic is as simple as:
+
+~~~lisp
+(defmethod publish-post :after ((db <db>) (post-file <post-file>))
+  (save-posts))
+
+(defmethod delete-post :after ((db <db>) (post <post>))
+  (save-posts))
+
+(defmethod update-post :after ((db <db>) (post <post>))
+  (save-posts))
+~~~
+
+An obvious downside of this approach is that such an implementation
+is tied to the class and not to object instance and that can lead into
+all sorts of troubles characterisitc to global state.
+
+Now that the file is saved we need to be able to restore it. That's
+also easy:
+
+~~~lisp
+(defun restore-posts ()
+  (read-parse-file *posts-file*
+                   #'(lambda (l)
+                       (setf *posts* (create-db-from-list l))
+                       )))
+~~~
+
+As you see there are no safety checks there, which might be needed
+were I to worry about it. I chose for simplicity in this case since for
+the time being I'm the only user of the program.
+
+`create-db-from-list` is an ordinary function in this case, not generic,
+and there is a `create-post-from-list` for posts. Now, during the
+development the structure of the database and posts inevitably changes
+and we need to handle that somehow and that's why database has `version` slot.
+
+What I decided to do was to do database migrations right during the
+read phase. In order to do that I find a unique feature for the next
+version of config, do migration and run the same function recursively and
+by this way eventually get a most uptodate structure that will be nicely
+serialized on next save.
+
+~~~lisp
+(defun create-db-from-list (l)
+  (cond
+    ((null (find :version l)) (create-db-from-list (migrate-db-v0-v1 l)))
+    ((null (find :service l)) (create-db-from-list (migrate-db-v1-v2 l)))
+    (t (create-db-from-list-finally l))))
+~~~
+
+### Publishing
+
+Now that I had a database I wanted to fill it somehow with posts! Each post
+is represented by a markdown file with a header that contains custom fields.
+For example:
+
+~~~markdown
+title: This is a cool post
+tags: this, is
+privacy: friends
+
+# Intro
+
+This post will contain
+
+* A header
+* A list
+* A couple of paragraphs
+~~~
+
+Please not that till this moment we didn't reach any cli interface and
+git-like state management, hence I wanted to implement a simple function
+that would take a file, parse it, convert markdown into html and publish
+it as a post.
+
+Task itself is also recursive meaning that after we parse a file and
+get a list of fields plus a text we need to parse the again to map
+all the fields to a representation livejournal undderstands.
+
+The first part you can checkout an [implementation][file-api] of
+`parse-post-file` function. What it does is it reads header line by
+line and treats all the first field of the form `field: value` as
+individual fields and then all the rest as a markdown body of
+that post which it converts to the html.
+
+After this step is done an instance of `<post-file>` is initialized and
+we can already do all sorts of things with it, not just publishing. For
+example we can check if it's a draft. But let's publish.
+
+For that we need co convert this object to the format `lj.postevent`
+understands. For this `to-xmlrpc-struct` generic is defined, which is super
+handy since I can do an implementation for both `<post>` and `<post-file>`
+and use whatever is at hand. For example for a new post it's always
+`<post-file>` and for updates it's `<post>`.
+
+For `<post-file>` I decided to go with a layered approach where I have
+a basic object and then enrich it with all sorts of additional helpers
+that contain logic for a particular fields. Here is `to-event-list`
+which is used by `to-xmlrpc-struct`:
+
+~~~
+(defmethod to-event-list ((post <post-file>) &optional (transform #'identity))
+  (let ((l (list
+            :event (if *raw-text* (body-raw post) (body post))
+            :subject (title post)
+            )))
+    (-<> l
+         (add-props (fields post))
+         (add-privacy-fields (privacy post))
+         (add-usejournal (journal post) <>)
+         (add-date)
+         (funcall transform <>))))
+~~~
+
+Every `add-*` function should return a new object that is porentially the
+same as `l` but can be modified version of it. Here is `add-userjournal`
+which is used whenever I want to post to a different journal than my
+own:
+
+~~~lisp
+(defun add-usejournal (journal plist)
+  (if (not (null journal))
+      (concatenate 'list
+                   plist
+                   (list :usejournal journal))
+      plist))
+~~~
+
+This conditional is not that elgan by itself, but the general pattern
+proved to be very useful and I used in in many different places.
+
+Once I got an even in livejournal view of it the publish function itself
+becomes really simple:
+
+~~~lisp
+(defmethod publish-post ((db <db>) (post-file <post-file>))
+  (set-credentials db)
+  (let ((*raw-text* (raw-text db)))
+    (let ((post (create-new-post post-file)))
+      (push post (posts db)))))
+~~~
+
+And if you remember for the previous parts database will be saved to file
+whenever this method is called. And now, if we call this method from
+`pre-commit` hook we will get all changes saved to disk and will be able
+to add them to the index and be included in the commit. `set-credentials`
+here is to ensure that we have all api variables set before we make a
+call. The most interesting part of it is `get-password` that not just
+retrieves the password, but it also requests and saves it in case of
+absence.
+
+
+
+
 
 [roswell script]: https://github.com/can3p/cl-journal/blob/master/roswell/cl-journal.ros
 [buildapp script]: https://github.com/can3p/cl-journal/blob/master/Makefile
@@ -418,4 +666,5 @@ to the language, I enjoy every second of it.
 [s-xml-rpc]: https://common-lisp.net/project/s-xml-rpc/
 [rpc4cl]: https://github.com/pidu/rpc4cl
 [cl-arrows]: https://github.com/nightfly19/cl-arrows
-
+[lj-api]: https://github.com/can3p/cl-journal/blob/master/src/lj-api.lisp
+[file-api]: https://github.com/can3p/cl-journal/blob/master/src/file-api.lisp#L35
