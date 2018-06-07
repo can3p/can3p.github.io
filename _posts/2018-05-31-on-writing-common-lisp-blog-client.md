@@ -897,6 +897,90 @@ help to query the database and give out information, last group like
 There is one more group I haven't talked about, which is `fetch`, `merge`
 and `remerge` and this is what I'm going to talk about next.
 
+## Fetch it
+
+All the functionality mentioned before was quite complete and I used it
+constantly for a year or even more. There were two drawbacks however:
+
+* I had source code ony for the posts I wrote using the client. Nothing
+  from earlier days was preserved and in case Livejournal.com goes down
+  forever, I would lose them all.
+
+* All the posts had to be written and update later with the client, because
+  it had no way to know about changes done elsewhere.
+
+Both parts were not important for day to day writing activities, but the
+former kept returning after every next negative news about the service and
+the latter was more of a challenging task that I wanted to tackle. I
+resisted for a long time but finally gave up and decided to write the
+logic. Besides that, how could it be a real git like client if it has
+`push` command but didn't have `fetch` or `merge`?
+
+For the first question `fetch` was the most important bit. I assumed that
+if I downloaded posts in any form or shape I could work later to turn them
+into a markdown later without any hassle.
+
+Luckily original Livejournal authors assumed such needs and designed API
+protocol to enable it (Kudos to Brad Fitzpatrick!).
+
+First important bit is [syncitems][syncitems]. What it allows to do is to
+get updates since some timestamp or from the beginning. A change can be
+a new post, an update to post or a comment, and since any post could
+be updated several times, duplicates were expected. The only thing protocol
+did not support were post deletions, which meant that I wouldn't notice
+such a change.
+
+I didn't care about comments or deleted posts, however what I wanted to get
+was a list of posts that changed somehow since timestamp. To make things
+even mor complicated, api call didn't return **all** changes but just
+some subset of it and I had to do several calls in a row to get a desired
+result.
+
+Logic looked quite complicated and I ended up literally [writing][sync_logic]
+the steps algorythm should take and them slowly implementing them step
+after step and surrounding them with tests to keep it under control, you can
+check the final logic in `get-fetched-item-ids` function in [lj-api][lj-api].
+As you can see I used `-<>` threading macro all over the place to keep the
+code readable. Apart from the logic itself I ended up implementing some
+function helpers that I didn't find in the language but that we're very
+useful.
+
+First example of this is `acc`. I do a lot of perl and data traversal is
+really good there. What the language allows you to do is to easily
+access nested arrays without checking existance of anything -
+`$obj->{a}{b}{c}`. Common lisp `getf` is much less flexible and allows
+only one level lookup and this is where `acc` is useful, since it allows
+any series of keys:
+
+~~~lisp
+(defun acc (l &rest args)
+  "Access member in a nested plist.
+
+   Usage (acc l :one :two :three)"
+  (cond
+    ((null args) l)
+    ((not (listp l)) nil)
+    (t (apply #'acc (getf l (car args)) (cdr args)))))
+~~~
+
+Another two functions are `partial` and `print-and-return`. Name of the
+first is self explanatory and the next one accepts a value, prints it
+and immediately returns it. This is useful in the middle of threading
+macro call, because it allows to print intermediary steps in the
+computation.
+
+One last perlism if `to-hash-table`. In perl transaformation between
+a list and an object is list and a hashmap is extremely simple and happens
+all the time. Since my posts database used a list to store posts I
+wanted to have some utility to convert id to hash map. Here is the final
+implementation:
+
+~~~lisp
+(defmethod to-hash-table ((db <db>) &key (key-sub #'itemid))
+  (let ((ht (make-hash-table :test 'equal)))
+    (dolist (post (posts db) ht)
+        (setf (gethash (funcall key-sub post) ht) post))))
+~~~
 
 
 
@@ -914,3 +998,6 @@ and `remerge` and this is what I'm going to talk about next.
 [file-api]: https://github.com/can3p/cl-journal/blob/master/src/file-api.lisp#L35
 [markdown]: https://github.com/can3p/cl-journal/blob/master/src/markdown.lisp
 [main]: https://github.com/can3p/cl-journal/blob/master/src/main.lisp
+[syncitems]: https://www.livejournal.com/doc/server/ljp.csp.xml-rpc.syncitems.html
+[getevents]: https://www.livejournal.com/doc/server/ljp.csp.xml-rpc.getevents.html
+[sync_logic]: https://github.com/can3p/cl-journal/commit/93695d3b0de4a9cdb37ee7b79a30de5bd2ed0370
