@@ -802,7 +802,7 @@ a super simple predicate to check whether particular post is modified:
 You see `file-write-date` function there. This logic works really well
 if no one touches files, however whenever files get moved or repo gets
 clone to anther location, timestamp from it gets distorted and all files
-are marked as modified. This is precisely the reaon of `ignored-at` field
+are marked as modified. This is precisely the reason of `ignored-at` field
 there. Whenever I want to mark all the files as uptodate I run this
 function:
 
@@ -816,6 +816,86 @@ function:
 
 This was one of the first times I used `loop` macro and I really fell in
 love with it some time after that.
+
+### Markdown
+
+Last fun bit from the basic implementation is about markdown formatting.
+I decided to use it from the vry beginning simply because it's an order
+of magnitude better to write then html and still allows to have markup
+in place comparing to real plain text.
+
+And of course both vim and emacs have excellent markdown modes and
+make it a real pleasure to write.
+
+What could be interesting about writing markdown? Well, to extend it!
+
+I had two extensions planned. First of all, I didn't want to use real
+urls for links between the post. If I did, I would be tied to one particular
+webservice and migration to another one would be error prone. If all
+links in the source code point to other markdown files, that means that
+whenever I decided to republish all posts somewhere else, I could have
+all the links resolved.
+
+For markdown rendering I used `cl-markdown` library and I'm not sure
+if it was the best choice possible. Why? Becase it's source code is
+close to inpenetrable to me and documentation is almost non-existant.
+Maybe I'm not a good reader, but I took me many evenings to get my
+head around library internals and to understand ways to extend it.
+
+For links generation I kept the assumption that I only have one
+database open at a time and it live in `*posts*` variable.
+`cl-markdown` unfortunately doesn't export any methods it uses for
+html generation and I had to [get][markdown] into library package
+to extend it the way I want.
+
+Inline elmeents are rendered using `render-span-to-html` generic
+function and common lisp rocks again there, because it allows to
+add an auxilary method for it and target a specific set of arguments,
+that allows to keep method body clean from unnecessary checks:
+
+~~~lisp
+(defmethod render-span-to-html :before
+    ((code (eql 'inline-link)) body encoding-method)
+  (let ((record (cl-journal.db:get-by-fname cl-journal::*posts* (cadr body))))
+    (if record
+        (setf (cadr body) (cl-journal.db:url record)))))
+~~~
+
+What happense is that for links first element in the `body` element
+holds a link that will be put in `href`, and in before element we can
+do a lookup in the database and replace a link if necessary. I think
+it's an amazing level of flexibility with this amount of effort.
+
+Another extension that I wanted to have was about links to the other
+blogs. Livejournal has some custom tags for different purposes and
+in this case it uses `<lj user="can3p">`, where user attribute holds
+the name of a blog. `cl-markdown` allows extensions and in order
+to make `{lj-user can3p}` render to a desired tag it's possible to
+use an official extension logic:
+
+~~~lisp
+(defextension (lj-user :arguments ((name :required)) :insertp t)
+  (setf name (ensure-string name))
+  (let ((safe-name (html-safe-name name)))
+    (ecase phase
+      (:parse)
+      (:render
+       (format nil "<lj user='~a'>" safe-name)))))
+~~~
+
+This looks and is indeed easy but it took me quite some time to figure
+all the details out.
+
+This part concludes main highlights of the client. Of course there is more,
+you can check out amount of [commands][main] supported at the moment.
+Some of them like `new` or `last` are there just for convenience to make
+it easier to start writing a new post or quickly open the last one in case
+of typos, some like `status` or `url` are informative in sense that they
+help to query the database and give out information, last group like
+`ignore-all` is used to fix the inperfections in file state handling logic.
+
+There is one more group I haven't talked about, which is `fetch`, `merge`
+and `remerge` and this is what I'm going to talk about next.
 
 
 
@@ -832,3 +912,5 @@ love with it some time after that.
 [cl-arrows]: https://github.com/nightfly19/cl-arrows
 [lj-api]: https://github.com/can3p/cl-journal/blob/master/src/lj-api.lisp
 [file-api]: https://github.com/can3p/cl-journal/blob/master/src/file-api.lisp#L35
+[markdown]: https://github.com/can3p/cl-journal/blob/master/src/markdown.lisp
+[main]: https://github.com/can3p/cl-journal/blob/master/src/main.lisp
