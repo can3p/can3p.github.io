@@ -5,7 +5,12 @@ keywords: "common lisp, livejournal, blog, cl-journal"
 category: blog
 ---
 
-I love markdown and vim. I do blogging and I am fed up with interfaces.
+Once I decided to sit down and write a perfect blog client for me. Since
+it was not just about result but also about the process I chose a language
+I enjoyed the most and this is how it ended up being written in Common
+Lisp. I didn't think I'll make that far and I'd like to share my experience
+in the process along with all little details that I had to go through
+during the implementation.
 
 ## Intro
 
