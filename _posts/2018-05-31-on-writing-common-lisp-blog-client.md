@@ -101,84 +101,76 @@ it's two, at least in sbcl. It appears that there is a distinction between
 cwd of external commands run by `uiop/run-program` and internal lisp
 facilities. to the the feeling make a following experiment:
 
-~~~bash
+```bash
 # preparation
 $ mkdir -p ~/test_cwd/second_folder && cd ~/test_cwd
 $ touch test.file
 $ touch second_folder/nested.file
 $ sbcl
-~~~
+```
 
 and lisp session:
 
-~~~lisp
-* (ql:quickload :uiop)
-To load "uiop":
-  Load 1 ASDF system:
-    uiop
-; Loading "uiop"
+    * (ql:quickload :uiop)
+    To load "uiop":
+    Load 1 ASDF system:
+        uiop
+    ; Loading "uiop"
 
-(:UIOP)
+    (:UIOP)
 
-* (probe-file "test.file")
+    * (probe-file "test.file")
 
-#P"/home/can3p/test_cwd/test.file"
+    #P"/home/can3p/test_cwd/test.file"
 
-* (uiop/run-program:run-program  "ls"
-    :input :interactive
-    :output :string))
+    * (uiop/run-program:run-program  "ls"
+        :input :interactive
+        :output :string))
 
-"second_folder
-test.file
-"
-NIL
-0
-~~~
+    "second_folder
+    test.file
+    "
+    NIL
+    0
 
 So far so good!
 
-~~~lisp
-* (uiop/os::chdir "second_folder")
+    * (uiop/os::chdir "second_folder")
 
-0
-* (uiop/run-program:run-program  "ls" :input :interactive :output :string)
+    0
+    * (uiop/run-program:run-program  "ls" :input :interactive :output :string)
 
-"nested.file
-"
-NIL
-0
-* (probe-file "nested.file")
+    "nested.file
+    "
+    NIL
+    0
+    * (probe-file "nested.file")
 
-NIL
-~~~
+    NIL
 
 Oops. Yes, `probe-file` expects something else.
 
-~~~lisp
-* (setf *default-pathname-defaults* #P"second_folder")
+    * (setf *default-pathname-defaults* #P"second_folder")
 
-#P"second_folder"
-*  (probe-file "nested.file")
+    #P"second_folder"
+    *  (probe-file "nested.file")
 
-#P"/home/can3p/test_cwd/second_folder/nested.file"
-~~~
+    #P"/home/can3p/test_cwd/second_folder/nested.file"
 
 And to double check.
 
-~~~lisp
-* (setf *default-pathname-defaults* #P"/home/can3p/test_cwd/")
+    * (setf *default-pathname-defaults* #P"/home/can3p/test_cwd/")
 
-#P"/home/can3p/test_cwd/"
-*  (probe-file "test.file")
+    #P"/home/can3p/test_cwd/"
+    *  (probe-file "test.file")
 
-#P"/home/can3p/test_cwd/test.file"
-*  (uiop/run-program:run-program  "ls" :input :interactive :output :string)
+    #P"/home/can3p/test_cwd/test.file"
+    *  (uiop/run-program:run-program  "ls" :input :interactive :output :string)
 
-"nested.file
-"
-NIL
-0
-~~~
+    "nested.file
+    "
+    NIL
+    0
 
 And that trailing forward slash in path name is important, don't lose it.
 As you see, `*default-pathname-defaults*` and  `(uiop/os::chdir "second_folder")` are independent and influence different things and to keep it consistent
@@ -199,9 +191,9 @@ if all user input works in emacs repl too.
 
 The simpliest ever way exists for yes/no questions and it's as simple as
 
-~~~lisp
+```common_lisp
 (when (y-or-n-p "Do the thing?") (do-the-thing))
-~~~
+```
 
 But let's say that you want to read an actual input. There is a `read-line`
 function that can help. One complication is a prompt message that you may
@@ -210,12 +202,12 @@ results in emacs in sense that prompt text will be shown after actual
 input. To solve this  I found that it's necessary to force output on a
 used stream and now prompt function looks like this for me:
 
-~~~lisp
+```common_lisp
 (defun prompt-read (x)
   (format *query-io* "~a: " x)
   (force-output *query-io*)
   (read-line *query-io*))
-~~~
+```
 
 And that's not all, because there is another possible user input which is
 passwords. Why is it unique? You probably will not want to enter it
@@ -224,14 +216,14 @@ magic inside of lisp and in the end a solution was to use `stty`
 to manipulate input visibility and `run-program` and internal bash `read`
 function to get user input:
 
-~~~lisp
+```common_lisp
 (defun prompt-read-password (x)
   (format *query-io* "~a: " x)
   (force-output *query-io*)
   (let ((password (run-program "stty -echo; read val; stty echo; echo $val" :output :string :input :interactive)))
     (string-trim '(#\Newline #\Space) password)
     ))
-~~~
+```
 
 ### Storing passwords
 
@@ -246,7 +238,7 @@ there are no builtins, however after some search I found `libsecret-tools`
 that help to connect to Gnome keychain. Here is how full password management
 commands look like:
 
-~~~lisp
+```common_lisp
 (defun get-password-cmd (login url)
   #-LINUX
   (format nil "security find-internet-password -a ~a -s ~a -w" login url)
@@ -260,7 +252,7 @@ commands look like:
 #+LINUX
 (defun set-password-cmd (login url)
   (format nil "secret-tool store --label='~a' '~a:login' '~a'" url url login))
-~~~
+```
 
 Why is `set-password-cwd` signature different? `secret-tool` will read the
 password for you and `security` expects it as an input.
@@ -310,22 +302,22 @@ useful. What I really wanted to do is to use the client with git to
 have all my posts under version control. In this case the best ever
 flow looks like this:
 
-~~~bash
+```bash
 $ cl-journal new post-slug
 $ # thanks to magic-ed editor opens and you can write your beautiful post
 $ git add . && git commit -m "another post"
-~~~
+```
 
 After that new post file along with all the generated metadata should be
 included in the commit. A trick there is to include all changes in the
 pre-commit hook. Aparently git allows that. Here is how current cl-journal
 pre-commit hook looks like:
 
-~~~bash
+```bash
 #!/usr/bin/env bash
 cl-journal push
 git add posts.lisp
-~~~
+```
 
 ## Client logic
 
@@ -351,21 +343,21 @@ Instead of that I've settled with [rpc4cl][rpc4cl] which simply returns
 a nested list and that's precisely what I need. To simplify the code
 I made s simple wrapper that takes adds host information to every call:
 
-~~~lisp
+```common_lisp
 (defun rpc-call (method &rest method-parameters)
   (apply #'rpc4cl:rpc-call *service-endpoint*
          nil nil method method-parameters))
-~~~
+```
 
 After that all remote calls naturally fit into the code. Here is as
 example a sub to get a so colled challenge from livejournal service:
 
-~~~lisp
+```common_lisp
 (defun getchallenge ()
   (->
    (rpc-call "LJ.XMLRPC.getchallenge")
    (getf :challenge)))
-~~~
+```
 
 Please note `->` from [cl-arrows][cl-arrows] here. I seriously cannot
 imagine my lisp coding with it, because using the arrow prevents all
@@ -375,12 +367,12 @@ code I always use `-<>` instead which allows to put a placeholder `<>`
 that will be replace with result. This way makes argument placing more
 explicit. As an example `getchallenge` can be transformed to this:
 
-~~~lisp
+```common_lisp
 (defun getchallenge ()
   (-<> "LJ.XMLRPC.getchallenge"
    (rpc-call <>)
    (getf <> :challenge)))
-~~~
+```
 
 One of the distinctive features of Common Lisp is it's live editing
 process where one can start interpreter, load necessary code there
@@ -421,7 +413,7 @@ but external tools. I wanted some storage however.
 First things first I decided to have a class that represents a posts
 database, that looks like this:
 
-~~~lisp
+```common_lisp
 (defclass <db> ()
   ((posts :initarg :posts :accessor posts)
    (version :initarg :version :reader version)
@@ -431,7 +423,7 @@ database, that looks like this:
    (service-endpoint :initarg :service-endpoint :reader service-endpoint)
    (fetch-store :reader fetch-store)
    ))
-~~~
+```
 
 That's the most recent version of course, the most minimal version contained
 only `posts` slot and thanks to the lisp interactivity more slots could be
@@ -445,7 +437,7 @@ sorts of recursive definitions for particular functionality. In this
 case I defined a generic `to-list` and wrote it's implementation for
 the database:
 
-~~~lisp
+```common_lisp
 (defmethod to-list ((db <db>))
   `(:login ,(login db)
     :version 2
@@ -453,12 +445,12 @@ the database:
     :raw-text ,(raw-text db)
     :service-endpoint ,(service-endpoint db)
     :posts ,(mapcar #'to-list (posts db))))
-~~~
+```
 
 To make this method work completely I had to only implement this method
 for post `<post>` class, which I did.
 
-~~~lisp
+```common_lisp
 (defmethod to-list ((post <post>))
   (list
    :itemid (itemid post)
@@ -474,18 +466,18 @@ for post `<post>` class, which I did.
    :filename (filename post)
    :journal (journal post)
    ))
-~~~
+```
 
 Super simple, after that saving database to a file became trivial:
 
-~~~lisp
+```common_lisp
 (defun save-posts ()
   (with-open-file (out *posts-file*
                        :direction :output
                        :if-exists :supersede)
     (with-standard-io-syntax
       (pprint (to-list *posts*) out))))
-~~~
+```
 
 `*posts*` here is an another global var that holds a reference to the
 open database and *posts-file* is a relative path pointing where posts
@@ -503,7 +495,7 @@ means that for any generic function we can hook in to any point during
 it's call. I had generics for publishing, updating and deleting the post
 and all save logic is as simple as:
 
-~~~lisp
+```common_lisp
 (defmethod publish-post :after ((db <db>) (post-file <post-file>))
   (save-posts))
 
@@ -512,7 +504,7 @@ and all save logic is as simple as:
 
 (defmethod update-post :after ((db <db>) (post <post>))
   (save-posts))
-~~~
+```
 
 An obvious downside of this approach is that such an implementation
 is tied to the class and not to object instance and that can lead into
@@ -521,13 +513,13 @@ all sorts of troubles characterisitc to global state.
 Now that the file is saved we need to be able to restore it. That's
 also easy:
 
-~~~lisp
+```common_lisp
 (defun restore-posts ()
   (read-parse-file *posts-file*
                    #'(lambda (l)
                        (setf *posts* (create-db-from-list l))
                        )))
-~~~
+```
 
 As you see there are no safety checks there, which might be needed
 were I to worry about it. I chose for simplicity in this case since for
@@ -544,13 +536,13 @@ version of config, do migration and run the same function recursively and
 by this way eventually get a most uptodate structure that will be nicely
 serialized on next save.
 
-~~~lisp
+```common_lisp
 (defun create-db-from-list (l)
   (cond
     ((null (find :version l)) (create-db-from-list (migrate-db-v0-v1 l)))
     ((null (find :service l)) (create-db-from-list (migrate-db-v1-v2 l)))
     (t (create-db-from-list-finally l))))
-~~~
+```
 
 ### Publishing
 
@@ -558,19 +550,17 @@ Now that I had a database I wanted to fill it somehow with posts! Each post
 is represented by a markdown file with a header that contains custom fields.
 For example:
 
-~~~markdown
-title: This is a cool post
-tags: this, is
-privacy: friends
+    title: This is a cool post
+    tags: this, is
+    privacy: friends
 
-# Intro
+    # Intro
 
-This post will contain
+    This post will contain
 
-* A header
-* A list
-* A couple of paragraphs
-~~~
+    * A header
+    * A list
+    * A couple of paragraphs
 
 Please not that till this moment we didn't reach any cli interface and
 git-like state management, hence I wanted to implement a simple function
@@ -602,7 +592,7 @@ a basic object and then enrich it with all sorts of additional helpers
 that contain logic for a particular fields. Here is `to-event-list`
 which is used by `to-xmlrpc-struct`:
 
-~~~
+```common_lisp
 (defmethod to-event-list ((post <post-file>) &optional (transform #'identity))
   (let ((l (list
             :event (if *raw-text* (body-raw post) (body post))
@@ -614,21 +604,21 @@ which is used by `to-xmlrpc-struct`:
          (add-usejournal (journal post) <>)
          (add-date)
          (funcall transform <>))))
-~~~
+```
 
 Every `add-*` function should return a new object that is porentially the
 same as `l` but can be modified version of it. Here is `add-userjournal`
 which is used whenever I want to post to a different journal than my
 own:
 
-~~~lisp
+```common_lisp
 (defun add-usejournal (journal plist)
   (if (not (null journal))
       (concatenate 'list
                    plist
                    (list :usejournal journal))
       plist))
-~~~
+```
 
 This conditional is not that elgan by itself, but the general pattern
 proved to be very useful and I used in in many different places.
@@ -636,13 +626,13 @@ proved to be very useful and I used in in many different places.
 Once I got an even in livejournal view of it the publish function itself
 becomes really simple:
 
-~~~lisp
+```common_lisp
 (defmethod publish-post ((db <db>) (post-file <post-file>))
   (set-credentials db)
   (let ((*raw-text* (raw-text db)))
     (let ((post (create-new-post post-file)))
       (push post (posts db)))))
-~~~
+```
 
 And if you remember for the previous parts database will be saved to file
 whenever this method is called. And now, if we call this method from
@@ -661,17 +651,17 @@ to `<post-file`> at will.
 
 How can I get the last published post? Easy:
 
-~~~lisp
+```common_lisp
 (defun get-last-published-post (db)
   (car (sort (posts db) #'> :key #'created-at)))
-~~~
+```
 
 How can I know the title of particular `<post>`? Super easy:
 
-~~~lisp
+```common_lisp
 (defmethod title ((post <post>))
   (title (read-from-file (filename post))))
-~~~
+```
 
 And that's just two examples, it's always possible to start the repl,
 load a posts database from file manually and start playing with contents.
@@ -680,10 +670,10 @@ To make repl experience even more pleasant common lisp provides `print-object`
 generic that is responsible for the text representation of the object. Hence
 we can print any information we like from the object instance.
 
-~~~lisp
+```common_lisp
 (defmethod print-object ((post <post>) stream)
   (format stream "<post filename:~a url:~a>~%" (filename post) (url post)))
-~~~
+```
 
 The last bit before implementing cli interface is a state management and
 it can also be easily implemented using the same operations on `<post>`
@@ -709,28 +699,26 @@ course line can be printed different from case to case.
 
 For example, we can have a following output:
 
-~~~
-There a drafts file
+    There a drafts file
 
-    2018-06-04-books29.md
+        2018-06-04-books29.md
 
-There is a new file to publish
+    There is a new file to publish
 
-    2018-06-06-test.md
+        2018-06-06-test.md
 
-There are 2 modified files to update
+    There are 2 modified files to update
 
-    2009-10-12-no-title.md
-    2013-12-31-eshe-odin.md
+        2009-10-12-no-title.md
+        2013-12-31-eshe-odin.md
 
-There is a deleted file to unpublish
+    There is a deleted file to unpublish
 
-    2011-01-23-no-title.md
-~~~
+        2011-01-23-no-title.md
 
 Let's taks drafts as an example. Here is a function to retrieve a list:
 
-~~~lisp
+```common_lisp
 (defun get-draft-files ()
   (->> (get-markdown-files)
        (remove-if #'(lambda (fname) (get-by-fname *posts* fname)))
@@ -738,7 +726,7 @@ Let's taks drafts as an example. Here is a function to retrieve a list:
        (remove-if-not #'draft)
        (mapcar #'filename)
        ))
-~~~
+```
 
 `cl-arrows` rocks again there. What happens is that we get a list of all
 markdown files in the folder, remove any files that exist in database,
@@ -752,12 +740,12 @@ Once we have a list, we need to have a pretty printer for it and it should
 be similar for all the cases. At this point in time I decided to test
 my defmacro-fu and came up with a macro, that looks like this:
 
-~~~lisp
+```common_lisp
 (with-files draft (get-draft-files)
   "There are ~a drafts files~%"
   "There a drafts file~%"
   "No drafts found~%")
-~~~
+```
 
 What this macro does is it generates another function named using
 second argument (it'll be `with-draft-files` in this case) and that
@@ -766,7 +754,7 @@ from the second argument (`(get-draft-files)` in this case) and print
 a list of items in a specified manner. The resulting `print-status`
 function looks very clean after all these manipulations:
 
-~~~lisp
+```common_lisp
 (defun print-status ()
   (flet ((print-names (items)
            (format t "~%~{    ~a~^~%~}~%~%" (mapcar #'filename items)))
@@ -778,7 +766,7 @@ function looks very clean after all these manipulations:
     (with-modified-files #'print-names)
     (with-deleted-files #'print-names)
     (with-fetched-files #'print-string-names)))
-~~~
+```
 
 I use one or another printing funciton depending on what is produced but
 the `with-*` function, it can be a plain list of filenames or a list
@@ -790,14 +778,14 @@ Speaking of modified posts. Whenever I publish a post I run
 `get-universal-time` and record it along the filename. Then it takes
 a super simple predicate to check whether particular post is modified:
 
-~~~lisp
+```common_lisp
 (defmethod modified-p ((post <post>))
   (let ((fname (filename post)))
     (and
      (probe-file fname)
      (< (or (ignored-at post) (updated-at post) (created-at post))
         (file-write-date fname)))))
-~~~
+```
 
 You see `file-write-date` function there. This logic works really well
 if no one touches files, however whenever files get moved or repo gets
@@ -806,13 +794,13 @@ are marked as modified. This is precisely the reason of `ignored-at` field
 there. Whenever I want to mark all the files as uptodate I run this
 function:
 
-~~~lisp
+```common_lisp
 (defun ignore-all ()
   (let ((ts (get-universal-time)))
     (loop for post in (posts *posts*) do
           (setf (ignored-at post) ts))
     (save-posts)))
-~~~
+```
 
 This was one of the first times I used `loop` macro and I really fell in
 love with it some time after that.
@@ -853,13 +841,13 @@ function and common lisp rocks again there, because it allows to
 add an auxilary method for it and target a specific set of arguments,
 that allows to keep method body clean from unnecessary checks:
 
-~~~lisp
+```common_lisp
 (defmethod render-span-to-html :before
     ((code (eql 'inline-link)) body encoding-method)
   (let ((record (cl-journal.db:get-by-fname cl-journal::*posts* (cadr body))))
     (if record
         (setf (cadr body) (cl-journal.db:url record)))))
-~~~
+```
 
 What happense is that for links first element in the `body` element
 holds a link that will be put in `href`, and in before element we can
@@ -873,7 +861,7 @@ the name of a blog. `cl-markdown` allows extensions and in order
 to make `{lj-user can3p}` render to a desired tag it's possible to
 use an official extension logic:
 
-~~~lisp
+```common_lisp
 (defextension (lj-user :arguments ((name :required)) :insertp t)
   (setf name (ensure-string name))
   (let ((safe-name (html-safe-name name)))
@@ -881,7 +869,7 @@ use an official extension logic:
       (:parse)
       (:render
        (format nil "<lj user='~a'>" safe-name)))))
-~~~
+```
 
 This looks and is indeed easy but it took me quite some time to figure
 all the details out.
@@ -952,7 +940,7 @@ access nested arrays without checking existance of anything -
 only one level lookup and this is where `acc` is useful, since it allows
 any series of keys:
 
-~~~lisp
+```common_lisp
 (defun acc (l &rest args)
   "Access member in a nested plist.
 
@@ -961,7 +949,7 @@ any series of keys:
     ((null args) l)
     ((not (listp l)) nil)
     (t (apply #'acc (getf l (car args)) (cdr args)))))
-~~~
+```
 
 Another two functions are `partial` and `print-and-return`. Name of the
 first is self explanatory and the next one accepts a value, prints it
@@ -975,12 +963,12 @@ all the time. Since my posts database used a list to store posts I
 wanted to have some utility to convert id to hash map. Here is the final
 implementation:
 
-~~~lisp
+```common_lisp
 (defmethod to-hash-table ((db <db>) &key (key-sub #'itemid))
   (let ((ht (make-hash-table :test 'equal)))
     (dolist (post (posts db) ht)
         (setf (gethash (funcall key-sub post) ht) post))))
-~~~
+```
 
 
 
