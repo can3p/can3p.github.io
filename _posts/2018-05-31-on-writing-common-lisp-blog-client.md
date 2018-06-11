@@ -1090,6 +1090,24 @@ After I got all this working I got a raw dump of all the posts I ever
 wrote, which meant that I could safely work on actually converting them
 back to markdown without fear to lose the contents.
 
+## Merge!
+
+### Markdown
+
+### Fields
+
+## Common Lisp gems
+
+### Loop
+
+### Macros
+
+### Format
+
+## Final thoughts
+
+Thank you for reading.
+
 
 
 [roswell script]: https://github.com/can3p/cl-journal/blob/master/roswell/cl-journal.ros
