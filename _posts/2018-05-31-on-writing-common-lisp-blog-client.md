@@ -1090,7 +1090,193 @@ After I got all this working I got a raw dump of all the posts I ever
 wrote, which meant that I could safely work on actually converting them
 back to markdown without fear to lose the contents.
 
+## Testing
+
+To be frank sync protocol didn't come for free to me. Too many moving
+parts and conditions. And while most of the code base has been written
+in a pure leisure fashion without a single test, I decided to build new
+features starting from fetch with at least some coverage. And I chose
+`prove` as a framework of choice.
+
+The most annoying bit of this framework is it's default reporter which
+uses escape control sequences for colors and emacs requires some additional
+configuration to make that work and that's not something I wanted to
+invest my time in. Instead I invested my time in finding a way to disable
+them. It appears that I've always been one dynamic variable away from
+the result:
+
+```common_lisp
+(setf prove:*enable-colors* nil)
+```
+
+The overal tests integration could have been easier, however stil doable.
+I've made a test system, added a magical spell to the main asd file and
+test framework was set up. One of the important things to note is that
+prove itself is a dependency of test sytem, hence in order to have it
+available in the repl this test subsystem should be loaded instead of
+the main one which will be loaded as a dependency.
+
+A really awesome feature of the `prove` framework is that it allows to
+rerun specific tests just by recompiling them. This feature enables
+near magical workflows when I could prototype a feature and then cover
+it with tests in realtime without the need to run a full test suite
+again and again or to do a build every time and run tests there.
+
+Since I wanted to write tests for the logic built around api calls I
+wanted to mock them to test outcomes of specific sequences of calls.
+I took `mockingbird` and it did provide me with a basic feature of
+mocking any function in any package, however I ended up implementing
+a small macro to enable testing a sequence of calls.
+
+Funnily enough all the mocked calls ended up being trivial, but the
+possibility is still there! The idea was that if you want to mock a
+function, say `foo` and have it return `(1 2 3)` on the first call and
+`nil` on the any subsequence you could just write:
+
+```common_lisp
+(with-mocked-calls
+  foo
+  (
+   (1 2 3)
+   nil
+   )
+   (some)
+   (code)
+   (block))
+```
+
+Macro allows to generate a lambda function for mockingbird that has
+a baked in logic that tests against the number of calls and returns
+a respective result. Here is it:
+
+```common_lisp
+(defmacro with-mocked-calls (func data &rest body)
+  "This function is necessary to emulate behaviour of
+   function that has side effects. Every subsequent
+   call to the function will return next item from the
+   data list, except the last one which will be returned
+   endlessly"
+  `(with-dynamic-stubs
+       ((,func
+         (lambda (&rest rest)
+           (declare (ignore rest))
+           (cond
+             ,@(loop for resp in data
+                    for i from 1 to (length data)
+                    collect
+                    (if (equal i (length data))
+                        `(t (quote ,resp))
+                        `((equal (call-times-for (quote ,func)) ,i)
+                          (quote ,resp))))))))
+     ,@body))
+```
+
+I'm no macro guru and I get super excited about every single case
+when I managed to write something that actually looks like
+useful thing. You can check the [tests][cl-journal.t] for this
+definition and realworld usage.
+
 ## Merge!
+
+With a database of raw posts at my hands I started thinking about
+ways to implement the merge. First and foremost I had to identify
+which posts actually had to be merged. This is trivial with missing posts,
+but for existing ones I had to have something to compare them to, and
+since I had raw posts from the server with the server timestamp I
+had to get server timstamp for all existing posts and update it for
+any posts that I wanted to change.
+
+If you remember I already had `ignore-all` command to bump local
+modification timestamp of all posts and I ended up doing the same for
+remote timestamp. The easiest way to get it was to take it from
+the `syncitems` call and to crossect them with all existing posts.
+As a first step I ensured that every fetched post received corresponding
+`syncitems` update timestamp and after that I only had to add this
+timstamp to all the posts in the database.
+
+And this is where my obsession with `loop` macro began.
+
+```common_lisp
+(defun mark-as-pulled ()
+  (let ((ht (-<> *posts*
+                 (fetch-posts)
+                 (restore-source-posts)
+                 (to-hash-table))))
+    (loop for post in (posts *posts*) do
+      (let ((ts (gethash (itemid post) ht)))
+        (if (null ts)
+            (format t "Item ~a was not fetched yet, run cl-journal fetch first~%" (itemid post))
+            (setf (server-changed-at post) ts))))
+    (save-posts)))
+```
+
+You see there old friends - `-<>` macro and `to-hash-table` function
+which became independent implementation there with an option to chose
+what value to use as a key for a hash table. Once that was done update
+became as trivial as setting slot values for any posts that were found
+in the hash table.
+
+That is one direction, but as I said there was another one - I had to
+get a server timestamp for any post update or creation I did. The post
+data being returned contained some timestamps but none of the public
+ones contained a timestamp of last post update. I started looking
+elsewhere and found that `getevents` call also returned server timestamp.
+Super handy! I did a quick function to get a timestamp based on the
+call only to find out later that timestamp did not always match the
+one from the `syncitems`.
+
+What the hell? Timezones. Livejournal api is quite naive in terms
+of dates in sense that all the timestamps it returns are in format
+`YYYY-MM-DD` and once can only assume that they all relate to the
+same timezone and `getevents` call was one particular example where
+this invariant didn't hold, or to say it more precisely, not always.
+It seems like this api call is served by the two servers in two different
+dcs with their local timezone set. Load balancer gives the request
+randomly to one or another which means that two subsequent calls
+may or may not have a timestamp difference in a couple of hours. The
+earlier one matches that of `syncitems`. To be honest, at this stage
+I should have ditched `getevents` in favour of `syncitems` but instead
+I did a hack: we just need to keep calling `getevents` till we get
+two different timestamps and from that point we can take a lower one
+and save it along the post.
+
+This is how this horror looks like:
+
+```common_lisp
+(defun lj-get-server-ts ()
+  ;; scary hack to get server ts in a single timezone
+  (labels ((r () (getf (lj-getevents '(1000000)) :lastsync))) ;; something big enough to have empty lookup
+    (loop with a = (r)
+          do
+             (let ((b (r)))
+               (format t "~a~%" b)
+               (when (older-p a b 10) (return a))
+               (when (older-p b a 10) (return b))))))
+```
+
+You see? It's `loop` again. What happens is that we keep calling the api
+and keeping the result of the previous call. Once we see the difference
+we return the earliest. Loop works wonderfully there: it allows to set a
+local binding `a` and then execute loop body and return from it with `return`.
+
+`older-p` is also interesting. I dind't find a simple way to
+compare `YYYY-MM-DD` timestamps, however `local-time` library provided
+a way to compare it's time object instances. And this helper
+function exploits this fact:
+
+```common_lisp
+(defun older-p (ts1 ts2 threshold)
+  (labels ((parse (ts)
+             (let
+                 ((local-time::*default-timezone* local-time::+utc-zone+))
+               (parse-timestring ts :date-time-separator #\Space))))
+    (timestamp>
+         (timestamp- (parse ts2) threshold :sec)
+         (parse ts1))))
+```
+
+Setting timezone doesn't have any special meaning there, it's just some
+stable values that allows us to compare timestamps
 
 ### Markdown
 
@@ -1126,3 +1312,4 @@ Thank you for reading.
 [syncitems]: https://www.livejournal.com/doc/server/ljp.csp.xml-rpc.syncitems.html
 [getevents]: https://www.livejournal.com/doc/server/ljp.csp.xml-rpc.getevents.html
 [sync_logic]: https://github.com/can3p/cl-journal/commit/93695d3b0de4a9cdb37ee7b79a30de5bd2ed0370
+[cl-journal.t]: https://github.com/can3p/cl-journal/blob/master/t/cl-journal.lisp#L96
