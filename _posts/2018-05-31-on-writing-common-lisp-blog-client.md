@@ -962,19 +962,133 @@ and immediately returns it. This is useful in the middle of threading
 macro call, because it allows to print intermediary steps in the
 computation.
 
-One last perlism if `to-hash-table`. In perl transaformation between
+One last perlism is `to-hash-table`. In perl transaformation between
 a list and an object is list and a hashmap is extremely simple and happens
-all the time. Since my posts database used a list to store posts I
-wanted to have some utility to convert id to hash map. Here is the final
-implementation:
+all the time. This is how I would do it:
 
-```common_lisp
-(defmethod to-hash-table ((db <db>) &key (key-sub #'itemid))
-  (let ((ht (make-hash-table :test 'equal)))
-    (dolist (post (posts db) ht)
-        (setf (gethash (funcall key-sub post) ht) post))))
+```perl
+my %ht = map { $_->{id} => $_ } @list;
 ```
 
+This simplicity means that most of perl code consists of jumps between
+lists and hashes to use whatever works best in a particular situation.
+Posts are stored in the database as a list hence I had to iterate over
+it in more or less smart way all the time. List is a reasonable structure
+there and on of the ways to fix the problem with lookups was to maintain
+a hashtable in the class, but I I decided to go with a simpler one and
+convert list to the table on the go.
+
+```common_lisp
+(degun to-hash-table (l)
+  (let ((ht (make-hash-table :test 'equal)))
+    (dolist (item l ht)
+      (setf (gethash (car item) ht) (cadr item)))))
+```
+
+This snippet highlights one of the neat features I like so much in
+common lisp. Maybe it has not the best possible standard library in
+the world, however there are true gems of usability there. In this
+particular case `dolist` accepts third parameter which will be
+returned as a result of dolist. That means that you can write things
+like filling in hash table very naturally.
+
+After `get-unfetched-item-ids` function was done, the next one on the list
+was one to download a list of posts. And here it got a bit tricky
+because of unicode.
+
+### Unicode and Livejournal
+
+Livejournal is there for quite a long time and that means that it's
+codebase and data predates the times when everything became all unicode.
+Many veteran coders can still show scars from that time, yeah. In essence
+there was an ASCII table that was used to define a meaning of the byte of
+data (hence single byte encoding) and it defined the meaning of the first
+127 values and left the rest undefined ant that was used as a space for
+extra characters for every specific alphabet. In russia there were
+two most pupolar encodings - cp1251 and koi8-r. How did it affect
+livejournal? As is written in their FAQ, they had now way of understanding
+the encoding and hence it was left up to users to choose a proper one
+to render a page.
+
+In case such encoding was chosen, Livejournal API allowed to download
+both unicode and non-unicode posts in the same way. Unfortunately,
+what I found empirically, serverside encoding did some weird stuff presumably
+because text was already converted to unicode somewhere along the way,
+and I had to disable it in order to get a properly readable way.
+
+This decision had consequences in sense that now I couldn't download
+different types of posts in one batch - livejournal api returned error
+in this case. The beast I ended up writing is called `lj-getevents-multimode`
+you can check it out in [lj-api][lj-api]. I baked in a couple of assumptions
+in the code:
+
+* One of the api versions (unicode one) was much more probable
+* If post had one version, the next one had a high chance of having the
+  same one.
+
+Final logic looked like this:
+
+* Try to download posts in one version
+* If fails reduce batch to one post and repeat
+* If that fails, flip download mode and repear
+* If that fails, error out
+* If one of the previous steps succeeded, increase batch size 2x and
+  repeat.
+
+
+Maybe a bit naive approach, but it worked really well in the end. After
+these two bits were done, fetch logic started looking very simple:
+
+```common_lisp
+(defmethod fetch-posts ((store <store>))
+  "Fetch all new items from remote service since last-fetched-ts
+   of the store"
+  (multiple-value-bind
+   (new-itemids last-item-ts ht) (get-unfetched-item-ids store)
+   (cond
+     ((null new-itemids) store)
+     (t (let ((new-events (-<> new-itemids
+                             (lj-getevents-multimode)
+                             (getf <> :events)
+                             (mapcar #'(lambda (x) (enrich-with-ts x ht)) <>))))
+          (merge-events store new-events last-item-ts)
+          (fetch-posts store))))))
+```
+
+`<store>` there is another class I created to store a list of downloaded
+posts in their original form. `enrich-with-ts` function exploited the
+fact that `get-unfetched-item-ids` could now server change dates for
+any updated post and download post api call did not return that and it
+simply added such a timestamp to every post. `merge-events` did no more
+than placing downloaded posts at the end of the list.
+
+Now, where should I take this store? I mimiced the way I stored and saved
+the database with posts and added a hacky solution to do lazy loading
+of database. I don't think it's necessary since posts are downloaded
+differently, but in case you wonder here is the implementation:
+
+```common_lisp
+(defmethod slot-unbound (class (db <db>) (slot-name (eql 'fetch-store)))
+  (setf (slot-value db 'fetch-store)
+        (make-instance '<store>)))
+```
+
+This gets tiggered whenever slot doesn't have value set and function sets
+slot value after creating the class instance. Next time slot already
+has value and this method is not called anymore.
+
+Top level fetch function now looked very simple:
+
+```common_lisp
+(defun fetch-updated-posts ()
+  (let ((store (restore-source-posts (fetch-store *posts*))))
+    (fetch-posts *posts*)
+    (save-source-posts store)))
+```
+
+After I got all this working I got a raw dump of all the posts I ever
+wrote, which meant that I could safely work on actually converting them
+back to markdown without fear to lose the contents.
 
 
 
