@@ -1227,7 +1227,7 @@ one from the `syncitems`.
 
 What the hell? Timezones. Livejournal api is quite naive in terms
 of dates in sense that all the timestamps it returns are in format
-`YYYY-MM-DD` and once can only assume that they all relate to the
+`YYYY-MM-DD HH:MM:SS` and once can only assume that they all relate to the
 same timezone and `getevents` call was one particular example where
 this invariant didn't hold, or to say it more precisely, not always.
 It seems like this api call is served by the two servers in two different
@@ -1260,7 +1260,7 @@ we return the earliest. Loop works wonderfully there: it allows to set a
 local binding `a` and then execute loop body and return from it with `return`.
 
 `older-p` is also interesting. I dind't find a simple way to
-compare `YYYY-MM-DD` timestamps, however `local-time` library provided
+compare `YYYY-MM-DD HH:MM:SS` timestamps, however `local-time` library provided
 a way to compare it's time object instances. And this helper
 function exploits this fact:
 
@@ -1276,11 +1276,19 @@ function exploits this fact:
 ```
 
 Setting timezone doesn't have any special meaning there, it's just some
-stable values that allows us to compare timestamps
+stable values that allows us to compare timestamps. Threshold is there
+to filter out small inconsitencies between time stamps.
 
-### Markdown
+After this was done I had a clear way to get posts to merge and it
+appeared to be an interesting exercise! Fundamentally speaking there are
+two parts: first we need to map all the fields supported by client to
+the fields in a raw response, and second we need to take post body
+from the response which happens to be html most of the time and convert
+it into markdown.
 
 ### Fields
+
+### Markdown
 
 ## Common Lisp gems
 
