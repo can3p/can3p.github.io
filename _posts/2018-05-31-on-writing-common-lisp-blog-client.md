@@ -1288,7 +1288,32 @@ it into markdown.
 
 ### Fields
 
+Livejournal API is really thought through for it's age and has a lot of
+decisions make it handy for the clients. One example is a changelog
+provided by `syncitems` call. The other one is that although it's
+not REST or anything alike original authors already thought about
+antities and it appeared that fetch api returns more or less the same
+structure that post api accepts. More or less means that main fields
+are on the same places, however reading entity returns more data and
+most of it was added much later and is not documented anyhow. Another
+important bit that whenever field contains non latin characters it's
+accepted as is for posting but is returned encoded in base64.
+
+I didn't know or care about this similarity when I wrote posting part
+and dind't spot it right away when I did reading part and that led
+to existance of two different pieces of code to handle fields. About
+the first part I already wrote, see description of `to-event-list`
+generic. Reading part is handled by `parse-xml-response` in
+[file-api][file-api]. The idea of this function is to return parsed
+data in such a way that I can use it later to create instances of
+`<post-file>` of `<post>`. Potentially non latin fields are handled
+by `b64getf` function that works almost like `getf` however if received
+value is a list with car equal to `:base64` it takes cdr and decodes
+it.
+
 ### Markdown
+
+### Filename
 
 ## Common Lisp gems
 
