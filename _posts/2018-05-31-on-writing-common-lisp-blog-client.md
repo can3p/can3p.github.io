@@ -1313,7 +1313,232 @@ it.
 
 ### Markdown
 
+Now, one more interesting part, at least it was really interesting to
+me to implement. The most important part of the raw post was an actual
+post content. And it was returned mostly in the form of html both for
+posts written via livejournal web interface and with client (which
+was expected since client converted markdown to html before sending).
+
+Given that what I wanted to get was to convert noncomplex html like this:
+
+```html
+<h1>One more heading</h1>
+
+<p>First <em>paragraph</em></p>
+
+<blockquote>As someone said</blockquote>
+```
+
+to a pretty markdown form such as this:
+
+    # One more heading
+
+    First *paragraph*
+
+    > As someone said
+
+
+To complicate things a bit more Livejournal had a couple of custom tags
+in use. The trickiest one was `lj-embed` that was created for any embed
+from youtube or a number of other services. At first problem looked
+unsolvable there, because by default response contained only tags
+like `<lj-embed id="1">` which gave no chance to guess the contents.
+Luckily livejournal once was an opensouce platform and a number of people
+made snapshots of the source code before it got closed. After thorough
+inspection of xmlrpc api [implementation][ljprotocol] I found that there was
+a megic undocumented flag `get_video_ids` which allowed to add a bit more
+information to the `lj-embed` and turn it into something like
+`<lj-embed source="youtube" vid="1bU7COLWJE0">` which was totally enough
+to restore original embed code.
+
+In order to put that together I looked for a appropriate html parsing
+library and after a couple of experiments it turned out that `plump`
+library was completely sufficient for the purpose. The trick is that
+`plump` can not only serialize html but also print it back and this is
+where it appeared to be super easy to plug in and turn html generation
+into markdown generation. Serialization is actually done by one generic
+function, `plump-dom:serialize-object` and common lisp generics and
+auxilary methods made it trivial to achieve desired behavior.
+
+First, I was able to target only tags I was interested in by specifying
+the type of the first argument, which represented the element. After
+that by specifying `:around` method I could completely control printing
+behaviour. Let's say that we want to implement only paragraph, links
+conversion and `lj-embed` support. Here is how the code would look like
+(you can check [full source][markdowwnify].
+
+```common_lisp
+(defmethod plump-dom:serialize-object :around ((node element))
+    (cond
+      ((tag-name-p node "P")
+         (loop for child across (children node)
+               do (serialize-object child))
+         (format *stream* "~%~%"))
+
+      ((tag-name-p node "a")
+       (let ((str (string-trim '(#\Space #\Newline)
+                               (with-output-to-string (out)
+                                 (let ((*stream* out))
+                                   (loop for child across (children node)
+                                         do (serialize-object child)))))))
+         (format *stream* "[~a](~a)" (if (> (length str) 0)
+                                         str (attribute node "href"))
+               (attribute node "href"))))
+
+      ((tag-name-p node "lj-embed")
+       (cond
+         ((string= (attribute node "source") "youtube")
+          (format *stream* "<iframe width=\"560\" height=\"315\" src=\"https://www.youtube.com/embed/~a\" frameborder=\"0\" allow=\"autoplay; encrypted-media\" allowfullscreen></iframe>" (attribute node "vid")))
+         (t (call-next-method))))
+
+      (t (call-next-method))
+    ))
+```
+
+What happens is that we thing of every paragraph by block of text with two
+newlines after it and this is what happens. By calling `serialize-object`
+we pass control back to generic and recursively it can return back
+to this method to do any conversions we're interested in for the child
+nodes of the paragraph.
+
+Also, another awesome part of this api is that `serialize-object` doesn't
+return string, it prints to the stream and that means that we don't need
+to waste our time with doing string concatenation and related house keeping
+but we are still in full control of the fate of the content to be printed.
+
+Link conversion shows it very good. I override `*out*` stream that `plump`
+uses for printing and catch all the children output into a string, which
+gives me a way to produce a link like `[contents](url)`.
+
+In this sense `lj-embed` conversion doesn't show anything new, but I decided
+to add it to show how easy it was.
+
+Final conversion code turned out to be more or less lengthy but that's
+only because I was already to tired and lazy to come up with smart solutions
+and only thing I cared about was to make enough test cases and make them
+pass.
+
+One library that I found super useful at this step was `cl-strings` that
+provides basic string manipulation utilities that all languages except
+common lisp provide out of the box. Of course I could have use `ppcre` but
+`cl-strings` just did the job and again made it trivial.
+
+I can say that it was magically simple for me due to how beautifully
+different common lisp played together in api. And `plump` is awesome by
+itself!
+
 ### Filename
+
+Once I had all proper fields and post source in place the last remaining
+part was to actually save the file. For existing posts it's easy, but for
+new ones I had to come up with a name. When I write a post with a client,
+`cl-journal new post-name` command generates filename
+`YYYY-MM-DD-post-name.md`. `post-name` was completely arbitrary and
+for reverse action I decided to generate it from the title. I almost
+decided to write such a library myself but then stumbled upon
+[reddit post][reddit slugify] where author presented `cl-slug` library
+which solved exactly this problem and not only for endlish but also
+for a number of other languages including russian. Thank you `author`!
+
+After slug was there I had to ensure the uniqueness of the filename.
+final logic turned out to be pretty straightforward: generate base
+in the form of `YYYY-MM-DD-slug` where timestamp was creation timestamp
+of the post and if there was aleady a file with the name `YYYY-MM-DD-slug`,
+keep adding `-1`, `-2` etc at the end till we found a vacant spot.
+
+Here is a full code of the sub:
+
+```common_lisp
+(defun generate-unique-filename (db datetime base)
+  "Generate a filename that does not yet exist in the database
+   based on datetime (yyyy-mm-dd hh:mm:ss) and a base (any string).
+
+   Function will generate a a base name of the form <date>-<slug>.md
+   and in case such a filename already exist, will keep adding increasing
+   postfix numbers till it finds a vacant spot"
+  (labels ((gen-name (date slug counter)
+             (if (equal counter 1)
+                 (format nil "~a-~a.md" date slug)
+                 (format nil "~a-~a-~a.md" date slug counter))))
+
+    (let ((date (car (split datetime)))
+          (slug (slugify base))
+          (ht (to-hash-table db :key-sub #'filename)))
+
+      (with-output-to-string (out)
+        (loop with cnt = 0
+              for name = (gen-name date slug (incf cnt))
+              while (gethash name ht)
+              finally (format out "~a" name))))))
+```
+
+Did I just use `loop` again? Oh my. And `to-hash-table` was useful
+again with a little modification of `:key-sub` parameter that
+allowed to have anything from the post as a key. In this case,
+using `filename` as a key made generation logic really simple.
+
+Now, I have all parts in place - I had all posts fetched from the
+server, I could determine which posts were updated remotely or just
+didn't exist locally and I could convert remote represenation back
+to the markdown text (I omitted the code that turned fields into
+a header with `title:` and other fields but it's there of course.
+
+By the way, in case usage of format in `finally` part surprises you,
+I had to add it, because otherwise sbcl kept serializing filename
+as an array of characters for some reason.
+
+`merge-fetched-posts` function contains one of the most epic usages
+of `loop` macro I ever did. Let me just paste it as an excerpt from
+the sub, full code is [there][cl-journal merge]:
+
+```common_lisp
+(loop for event in (reverse (events store))
+        for itemid = (getf (getf event :event) :itemid)
+        for post = (gethash itemid ht)
+        when (and (not (gethash itemid visited))
+                (or (not target-itemid)
+                    (equal itemid target-itemid))
+                (or (not post)
+                    (older-than-p post (getf event :sync-ts))))
+        do
+        (stuff))
+```
+
+All the logic fit nicely in default features of `loop`. `reverse` it's
+there because I wanted to convert only the most fresh version of
+the post that I downloaded, `for` part of the macro played role of `let`
+and assigned values on every loop iteration and `when` included
+all the logic necessary so that loop body executed only in case it had
+to: in case post was not already generated during this run, it didn't
+exist in database or databse verion was older than remote.
+
+One important thing in this logic was `synced-from-fetch` flag for every
+post. Whenever I merge it I raised this flag to 1 and whenever I updated
+or created post with client I reset it to `nil`. Why important? Simply
+because concversion process was and still isn't perfect, I wanted to
+have a nondistructive way to run merge functionality again and again,
+end this is what `remerge-fetched-posts` function and related cli command
+does. With this flag I could take all the posts that I already converted but
+that were not touched after and merge them again. This gave me an
+opportunity to already have markdown files of some sorts and still
+work on better conversion afterwards.
+
+From potential improvements:
+
+* `plump` doesn't handle accidental closing image tags as I wanted them
+  to (I want them to be ignored)
+* All paragraph contents tend to be turned into one line and in
+  a perfect world I wanted my converter to also have line length limitation
+  and nicely wrap the code if necessary.
+* And probably many more bugs and mistakes that I did myself.
+
+After all this functionality got implemented client reached near perfect
+state to me, because if you remember it's unidirectional nature was one
+of the client limitation and now it actually didn't matter where post
+was written or updated, fetch end merge steps could incorporate all
+the changes back. And what's eve cooler, now client can be used for
+any blog and from the day one it's possible to get all posts offline
+and work as if you were using `cl-journal` forever.
 
 ## Common Lisp gems
 
@@ -1324,6 +1549,43 @@ it.
 ### Format
 
 ## Final thoughts
+
+You probably spotted already that I've been mentioning Livejournal
+everywhere it it can give an impression that there is no way in life
+for the client to support any other service. That's actually not true,
+but will require a good amount of work of course. First step would
+be to abstract away remote api and the second one will be to make
+`<post>` and `<post-file>` classes service agnostic. It'll be even easier
+if we do not set the aim to support the same feature set for every
+single platform and provide a `cl-journal as a platform that can
+give same experience as it does now for Livejournal with service
+specific changes.
+
+In terms of featureset a lot of things can be done better of course.
+For example I can think of template posts, or client can support
+failures much nicer, but after using it for more than two years I
+can say that none of it is something that turns it into something
+unusable.
+
+Was it a correct choice to use common lisp for implementation? For me,
+absolutely yes, because a lot of things I implemented would have taken
+twice as code to get them working and interactive development
+mad me so performant that I was able to add significant features
+to the code even with a very limited time I had.
+
+One good learning for me was to add test into interactive development
+workflow. It was really not that obvious for me, but comment driven
+development as I did for `syncitems` with addition of test allowed
+me to write functional code even in the time of heavy sleep deprivation
+that I tend to dall into.
+
+Another good learning that I had was to follow bottom up approach, you
+could see an example in the merge description. Whenever I approached
+big task I started asking myself very  simple question starting from
+"How do I get the changes?" or "How do I get the filename" and solving
+them slowly one by one. After they were all complete the final task
+that was thought to be complex and indeed was turned out to be
+a very small function with simple logic.
 
 Thank you for reading.
 
@@ -1340,9 +1602,14 @@ Thank you for reading.
 [cl-arrows]: https://github.com/nightfly19/cl-arrows
 [lj-api]: https://github.com/can3p/cl-journal/blob/master/src/lj-api.lisp
 [file-api]: https://github.com/can3p/cl-journal/blob/master/src/file-api.lisp#L35
+[markdownify]: https://github.com/can3p/cl-journal/blob/master/src/markdownify.lisp
+[cl-journal merge]: https://github.com/can3p/cl-journal/blob/master/src/markdownify.lisp#L243
 [markdown]: https://github.com/can3p/cl-journal/blob/master/src/markdown.lisp
 [main]: https://github.com/can3p/cl-journal/blob/master/src/main.lisp
 [syncitems]: https://www.livejournal.com/doc/server/ljp.csp.xml-rpc.syncitems.html
 [getevents]: https://www.livejournal.com/doc/server/ljp.csp.xml-rpc.getevents.html
 [sync_logic]: https://github.com/can3p/cl-journal/commit/93695d3b0de4a9cdb37ee7b79a30de5bd2ed0370
 [cl-journal.t]: https://github.com/can3p/cl-journal/blob/master/t/cl-journal.lisp#L96
+[ljprotocol]: https://github.com/apparentlymart/livejournal/blob/master/cgi-bin/ljprotocol.pl
+
+[reddit slugify]: https://reddit.com/r/common_lisp/blabla
