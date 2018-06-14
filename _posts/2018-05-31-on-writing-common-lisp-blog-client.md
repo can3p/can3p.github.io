@@ -1548,6 +1548,68 @@ and work as if you were using `cl-journal` forever.
 
 ### Format
 
+## Common Lisp pitfalls
+
+### Packages
+
+Before writing `cl-journal` I didn't have too much experience working
+with Common Lisp, so I decided to pick up whatever I considered to
+be latests best practices and try to live with it. I've split All
+functionality in separate packages and tried to export and import
+only really necessary functionality.
+
+Soon I've found out that this way of development was much more verbose
+there than in other languages and the reason was mostly CLOS. Packages
+serve as containers for symbols in Common Lisp and any symbol you want
+to share between packages needs to be exported.
+
+That means that class name should be exported as well as all generic
+functions generated for it accessors. A good example is [cl-journal.db][db]
+package. Three classes with a handful of slots each generated a long list
+of symbols to export and besides that there were still ordinary functions
+and special variables. And since generic functions where magically
+generated it still left open questions about how they will work if
+such generic functions where imported from two different packages into
+third one. I'm sure this behavior is defined somewhere, but I don't know.
+
+In the end I got so tired of all this maintenance that I started importing
+whol packages with `:use` even though I treated that earlier as a
+non recommended way.
+
+### Standard library
+
+I think a very thick book can be compiled from all the complaints
+regarding standard package of the language. Sometimes there are functions
+that are of no interest to most people and there are many cases
+when obviously necessary functions are not there.
+
+Good examples are user input, string manipulations or external processes.
+Some things like prompt are more or less easy to do, but password input
+proved to be a really painful exercise. `uiop/run-program` is also far
+from the easiest function to use. Ok, maybe I missed a very good tutorial
+on this one, but I had to go through it's code several times to understand
+the details or meaning of it's parameters.
+
+Common Lisp comes from the time when it was if not mainstream but widespread
+language with lisp machine legacy and from what I understand this had
+influence on it's relations with outside world and that really hurts,
+especially comparing string and io operations with languages like perl
+that do that this bit particularly well.
+
+### Third party libraries
+
+That's another very common complain. Common lisp libraries are often
+of fantastic quality feature-wise but it doesn't really help if they
+have no documentation or a brief one that explains 10% of the functionality.
+And you can almost forget about library specific tutorials. Getting
+over this was a rewarding intellectual achievement for me but the price
+was time, lot's of time.
+
+Here I'd like to admit that `plump` library had one of the best
+documentations and even a couple of projects using it in neighbour repos.
+This bit really helped me in understanding the library and coming up
+with a proper solution for html conversion.
+
 ## Final thoughts
 
 You probably spotted already that I've been mentioning Livejournal
@@ -1601,6 +1663,7 @@ Thank you for reading.
 [rpc4cl]: https://github.com/pidu/rpc4cl
 [cl-arrows]: https://github.com/nightfly19/cl-arrows
 [lj-api]: https://github.com/can3p/cl-journal/blob/master/src/lj-api.lisp
+[db]: https://github.com/can3p/cl-journal/blob/master/src/db.lisp
 [file-api]: https://github.com/can3p/cl-journal/blob/master/src/file-api.lisp#L35
 [markdownify]: https://github.com/can3p/cl-journal/blob/master/src/markdownify.lisp
 [cl-journal merge]: https://github.com/can3p/cl-journal/blob/master/src/markdownify.lisp#L243
