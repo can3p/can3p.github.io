@@ -1542,6 +1542,111 @@ and work as if you were using `cl-journal` forever.
 
 ## Common Lisp gems
 
+All the points written below don't have a unified perception in lisp
+community and are strictly my opinions. Whenever I discovered them I
+really enjoyed using them every single second and missed them a lot
+in usual (tm) languages.
+
+### Generic functions
+
+If I were to choose the single most amazing feature of the language I
+would choose generic functions. Why?
+
+The reason is that decoupling them from the object resulted in amazing
+freedom and flexibility when using them.
+
+First of all, generic function dispatch against all it's arguments and
+second all of the arguments can be of any type and not some object hierarchy.
+What the means that it's very easy to build recursive implementations
+that do some preliminary work with arguments and then call the same
+function again which makes generic function dispatch differently and
+execute another implementation. I used this trick a lot.
+
+One example of such a definition could be `fetch-posts` function.
+What we know that we wand to fetch posts to some kind of database,
+which has a store. Such a definition means that we can have objects
+of both types at our disposal. With described technique it's simple
+to make it work as desired:
+
+```common_lisp
+(defgeneric fetch-posts (db))
+
+(defmethod fetch-posts ((db <db>))
+  (set-credentials db)
+  (fetch-posts (fetch-store db)))
+
+(defmethod fetch-posts ((store <store>))
+  (do-actual-fetch))
+```
+
+When we call `fetch-posts` against the database implementation just
+extracts store from it and call the function again which execute
+another method and now we can fetch posts both with store or database
+instance without any effort.
+
+Another bonus from decoupling is that you are free to create any new
+function and implement it against any object hierarchy. It may be not
+even an hierarch but just a set of types.
+
+Remember function `to-hash-table` that I used before? It is implemented
+as generic function.
+
+```common_lisp
+(defgeneric to-hash-table (source &key))
+```
+
+With such a definition you can just implement it against any type that
+you want without any restrictions. When I needed it for database I
+wrote this implementation:
+
+```common_lisp
+(defmethod to-hash-table ((db <db>) &key (key-sub #'itemid))
+  (let ((ht (make-hash-table :test 'equal)))
+    (dolist (post (posts db) ht)
+        (setf (gethash (funcall key-sub post) ht) post))))
+```
+
+And when later it became clear that `<store>` class can also benefit from
+one, I just implemented it:
+
+```common_lisp
+(defmethod to-hash-table ((store <store>) &key)
+  (let ((ht (make-hash-table :test 'equal)))
+    (dolist (item (events store) ht)
+      (let ((itemid (-<> item
+                         (getf <> :event)
+                         (getf <> :itemid)))
+            (ts (getf item :sync-ts)))
+        (setf (gethash itemid ht) ts)))))
+```
+
+Having said that I need to mention that this freedom applies to external
+functions as well and many of the external libraries expose precisely
+genric functions to control their behaviour. The good example is with
+`plump` library when it was enough just to implement function against
+the set of types without doing any work at all with types.
+
+Last bit that I want to praise is auxilary methods. This is just incredible
+because of flexiblity it gives. When I just started coding I wanted
+to have database saved on any operation. Post created? Save! Updated?
+Save! Deleted? Save!
+
+Using `:after` modified allowed me to completely decouple the logic and
+for example main implemntation of `publish-post` new nothing about
+saving to the database, but meanwhile in the other package it was as
+easy as
+
+```common_lisp
+(defmethod publish-post :after ((db <db>) (post-file <post-file>))
+  (save-posts))
+```
+
+And it's done.
+
+### Streams
+
+### Special variables
+
 ### Loop
 
 ### Macros
