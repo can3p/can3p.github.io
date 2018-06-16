@@ -1406,7 +1406,7 @@ return string, it prints to the stream and that means that we don't need
 to waste our time with doing string concatenation and related house keeping
 but we are still in full control of the fate of the content to be printed.
 
-Link conversion shows it very good. I override `*out*` stream that `plump`
+Link conversion shows it very good. I override `*stream*` stream that `plump`
 uses for printing and catch all the children output into a string, which
 gives me a way to produce a link like `[contents](url)`.
 
@@ -1643,15 +1643,160 @@ easy as
 
 And it's done.
 
+Another usecase can be found in markdown handling that I did. What I
+wanted to do was to write file with links pointing to the local files
+and translate them to the real urls on the markdown compilation phase.
+
+```common_lisp
+(defmethod render-span-to-html :before
+    ((code (eql 'inline-link)) body encoding-method)
+  (let ((record (cl-journal.db:get-by-fname cl-journal::*posts* (cadr body))))
+    (if record
+        (setf (cadr body) (cl-journal.db:url record)))))
+```
+
+`:before` method does not in general change the behavior of the main
+code, however it has access to all it's arguments and in this case
+I check if whatever is passed as a url can be resolved to a post
+url from the database and modify argument accordingly. After that
+I don't really need to touch library logic, it works as usual.
+
 ### Streams
 
+Stream are really powerful. Languages that don't have them (let's say
+javascript) often end up with ugly hacks or additional code or with
+string concatenation all over the place and with streams all the api
+gets streamlined immediately and the neat thing is that it's still
+totally under control.
+
+I benefited from this fact quite a lot. One example is saving data
+to the file. Common Lisp provides a function `pprint` that prints data
+structure in a nice way. Default is stdout, but stream can also be passed
+as an argument. Given that saving state to file becomes as simple as:
+
+```common_lisp
+(defun save-posts ()
+  (with-open-file (out *posts-file*
+                       :direction :output
+                       :if-exists :supersede)
+    (with-standard-io-syntax
+      (pprint (to-list *posts*) out))))
+```
+
+And what's cool is that whatever is printed with `pprint` by definition
+can be consumed by `read`. Since `read` invokes Common Lisp reader it
+has some security implications for sure. In my usecase however I didn't
+really bother about this part, because I'm a sole user of the `cl-journal`
+and database reading and writing logic is written in such a way, that
+I can change it to whatever format anytime without any friction.
+
+Another usage was showcased in part about html to markdown conversion.
+Serialization logic in `plump` simply prints results in `*stream*` variable
+that by default happens to be equal to stdout (if I'm not mistaken) and
+in the method I could capture any part of output simply by temporary
+setting `*stream*` to the other stream and then doing whatever I found fit
+with output.
+
+```common_lisp
+(with-output-to-string (out)
+  (let ((*stream* out))
+    (loop for child across (children node)
+          do (serialize-object child)))))))
+```
+
+`format` works with streams too, I'll talk about it later.
+
 ### Special variables
+
+Special variables is yet another super powerful concept. @TODO: I need
+to check their proper name.
+
+What's special about them is that they use dynamic binding instead of a
+lexical one and that means the changing the value of such not only for
+the current scope but for all the code that is called from there.
+
+This give a powerful weapon to penetrate through layers of abstractions
+without a cost of passing this variable through or making it global
+in true sense of this word.
+
+In case of `plump` special variable provided an easy way to control
+the output.
 
 ### Loop
 
 ### Macros
 
 ### Format
+
+I find `format` really fascinating. Most of languages mimic `C`, they
+implement `sprintf` style functions and it's a shame given how much more
+powerful `format` is.
+
+First of all it works on streams, that give a lot of power on their own,
+as I wrote earlier. Next it literary has all functionality necessary
+to print to always print to console in one command.
+
+It's possible to print a quoted value, a value without surrounding quotes,
+add all sorts of paddings to the printed data and to even print arrays!
+
+Here are few spells:
+
+```common_lisp
+(format nil "~{~a/~}~a-~2,'0d-~2,'0d-~a.md"
+        rest
+        (getf date :year)
+        (getf date :mon)
+        (getf date :day)
+        name
+        )))
+```
+
+What happens there? We print a pathname. `rest` contains list with
+folders, date parts go after that and in the end we want to print the
+name. `~{~a/~}` prints folders separated by forward slash, `~2,'0d`
+ensure that two digit number is printed and pads it with leading zeros
+if necessary. If arguments are `((list "path" "to" "file") 2018 3 4 title`
+result will be `path/to/file/2018-03-04-tile.md`
+
+Or here is how i print a list of files in status, `~%` means newline:
+
+```common_lisp
+(format t "~%~{    ~a~^~%~}~%~%" items))
+```
+
+Format can do much more and it simply eliminates manual fiddling with
+data to prepare it for printing.
+
+### Little things
+
+There are lots of decisions in Common Lisp standard package that make
+you only wonder why didn't the find the way to any other language.
+
+For example `read-line` function accepts an argument that will be returned
+if end of stream was reached. Why would you need this? Simply because
+returning custom value there can make some upper level logic more generic.
+Btw, `dolist` does that too.
+
+Another small nicety is that many functions on collections accept
+parameters like `:test` or `:key` that immediately make them more useful.
+
+Here is how last published post is found , for example:
+
+```common_lisp
+(defun get-last-published-post (db)
+  (car (sort (posts db) #'> :key #'created-at)))
+```
+
+Not effective, I know. Or `member` function in this example:
+
+```common_lisp
+(defun known-editor (e)
+  (member e '("vim" "emacs" "emacsclient") :test 'string=))
+```
+
+It's string there, but having this parameter immediately allows to
+have list members of any type as long as there is an equality check
+for them.
 
 ## Common Lisp pitfalls
 
