@@ -18,6 +18,17 @@ that I had to go through during the implementation.
 than anything else because this is what it is. As a consequence there
 can be a lot of things real lisp wizards will raise an eyebrow on.
 
+**Note 1** I'm glad to hear any feedback. If you have any suggestions
+on the text, want to fix a typo or correct my explanation, please
+consider opening an issue in the [blog repo][blog repo]. If you think
+that client code doesn't do what it has to do, please make a pull
+request or open an issue in [client repo][cl-journal repo].
+
+**Note 2** I decided to make all links to the code agains fixed sha1
+so that future changes do not invalidate them. I'm not sure if I
+will frequently revisit this document and I hope that the post
+will remain relevant with this approach.
+
 Below you will read a story about writing a blog client for
 livejournal.com webservice in Common Lisp. As one may note, it sounds
 like using a very niche language for a near dead web service. To make
@@ -2122,26 +2133,28 @@ Thank you for reading.
 
 
 
-[roswell script]: https://github.com/can3p/cl-journal/blob/master/roswell/cl-journal.ros
-[buildapp script]: https://github.com/can3p/cl-journal/blob/master/Makefile
-[main package]: https://github.com/can3p/cl-journal/blob/master/src/main.lisp
+[roswell script]: https://github.com/can3p/cl-journal/blob/5659a99e89cc392fbd56ee3659e70ee8743e2b3e/roswell/cl-journal.ros
+[buildapp script]: https://github.com/can3p/cl-journal/blob/5659a99e89cc392fbd56ee3659e70ee8743e2b3e/Makefile
+[main package]: https://github.com/can3p/cl-journal/blob/5659a99e89cc392fbd56ee3659e70ee8743e2b3e/src/main.lisp
 [cl-brewer]: https://github.com/can3p/cl-brewer
 [magic-ed]: https://github.com/sanel/magic-ed
 [xml-rpc]: https://www.livejournal.com/doc/server/ljp.csp.xml-rpc.protocol.html
 [s-xml-rpc]: https://common-lisp.net/project/s-xml-rpc/
 [rpc4cl]: https://github.com/pidu/rpc4cl
 [cl-arrows]: https://github.com/nightfly19/cl-arrows
-[lj-api]: https://github.com/can3p/cl-journal/blob/master/src/lj-api.lisp
-[db]: https://github.com/can3p/cl-journal/blob/master/src/db.lisp
-[file-api]: https://github.com/can3p/cl-journal/blob/master/src/file-api.lisp#L35
-[markdownify]: https://github.com/can3p/cl-journal/blob/master/src/markdownify.lisp
-[cl-journal merge]: https://github.com/can3p/cl-journal/blob/master/src/markdownify.lisp#L243
-[markdown]: https://github.com/can3p/cl-journal/blob/master/src/markdown.lisp
-[main]: https://github.com/can3p/cl-journal/blob/master/src/main.lisp
+[lj-api]: https://github.com/can3p/cl-journal/blob/5659a99e89cc392fbd56ee3659e70ee8743e2b3e/src/lj-api.lisp
+[db]: https://github.com/can3p/cl-journal/blob/5659a99e89cc392fbd56ee3659e70ee8743e2b3e/src/db.lisp
+[file-api]: https://github.com/can3p/cl-journal/blob/5659a99e89cc392fbd56ee3659e70ee8743e2b3e/src/file-api.lisp#L35
+[markdownify]: https://github.com/can3p/cl-journal/blob/5659a99e89cc392fbd56ee3659e70ee8743e2b3e/src/markdownify.lisp
+[cl-journal merge]: https://github.com/can3p/cl-journal/blob/5659a99e89cc392fbd56ee3659e70ee8743e2b3e/src/markdownify.lisp#L243
+[markdown]: https://github.com/can3p/cl-journal/blob/5659a99e89cc392fbd56ee3659e70ee8743e2b3e/src/markdown.lisp
+[main]: https://github.com/can3p/cl-journal/blob/5659a99e89cc392fbd56ee3659e70ee8743e2b3e/src/main.lisp
 [syncitems]: https://www.livejournal.com/doc/server/ljp.csp.xml-rpc.syncitems.html
 [getevents]: https://www.livejournal.com/doc/server/ljp.csp.xml-rpc.getevents.html
 [sync_logic]: https://github.com/can3p/cl-journal/commit/93695d3b0de4a9cdb37ee7b79a30de5bd2ed0370
-[cl-journal.t]: https://github.com/can3p/cl-journal/blob/master/t/cl-journal.lisp#L96
+[cl-journal.t]: https://github.com/can3p/cl-journal/blob/5659a99e89cc392fbd56ee3659e70ee8743e2b3e/t/cl-journal.lisp#L96
 [ljprotocol]: https://github.com/apparentlymart/livejournal/blob/master/cgi-bin/ljprotocol.pl
 
 [reddit slugify]: https://reddit.com/r/common_lisp/blabla
+[blog repo]: https://github.com/can3p/can3p.github.io/issues
+[cl-journal repo]: https://github.com/can3p/cl-journal/issues
