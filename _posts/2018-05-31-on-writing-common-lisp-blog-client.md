@@ -325,6 +325,11 @@ formula with urls pointing to all the dependencies so that formula can
 download them all and then use quicklisp and buildapp to make a binary
 without any additional downloads.
 
+A little note about arguments parsing. There are libraries for this
+task in the ecosystem but I ended up using none of them. I wanted
+to have a command based cli with some interactivity and the only
+things important in this case were first and maybe second argument.
+
 ### Editing
 
 One last bit of user input! What I wanted to do is to allow to invoke
