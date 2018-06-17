@@ -1701,7 +1701,7 @@ with output.
 (with-output-to-string (out)
   (let ((*stream* out))
     (loop for child across (children node)
-          do (serialize-object child)))))))
+          do (serialize-object child))))
 ```
 
 `format` works with streams too, I'll talk about it later.
@@ -1803,7 +1803,7 @@ of key/value pair:
       do
          (format out "~a: ~a~%"
                  (string-downcase (symbol-name key))
-                 value)))
+                 value))
 ```
 
 From examples above you can already spot the greatest weakness of this
@@ -1918,7 +1918,7 @@ Here are few spells:
         (getf date :mon)
         (getf date :day)
         name
-        )))
+        )
 ```
 
 What happens there? We print a pathname. `rest` contains list with
@@ -1931,7 +1931,7 @@ result will be `path/to/file/2018-03-04-tile.md`
 Or here is how i print a list of files in status, `~%` means newline:
 
 ```common_lisp
-(format t "~%~{    ~a~^~%~}~%~%" items))
+(format t "~%~{    ~a~^~%~}~%~%" items)
 ```
 
 Format can do much more and it simply eliminates manual fiddling with
