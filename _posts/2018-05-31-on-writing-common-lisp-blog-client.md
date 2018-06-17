@@ -8,7 +8,7 @@ category: blog
 Once I decided to sit down and write a perfect blog client for
 me. Since it was not just about result but also about the process I
 chose a language I enjoyed the most and this is how it ended up being
-written in Common Lisp. I didn't think I'll make that far and I'd like
+written in Common Lisp. I didn't think I'll get that far and I'd like
 to share my experience in the process along with all little details
 that I had to go through during the implementation.
 
@@ -35,11 +35,24 @@ like using a very niche language for a near dead web service. To make
 you a bit more surprised I can add that I've been working on it on and
 off for a couple of years now.
 
+It started very simple but now [cl-journal][cl-journal] is quite
+powerful. For example it handles:
+
+* Any livejournal compatible service (like Dreamwidth)
+* Publishing new posts and updating changed ones
+* Post text is written in markdown, many livejournal fields are supported,
+  such as visibility, location or music.
+* Fetching posts from remove server and transforming them into markdown
+  format.
+* Lot's of smaller stuff like links to local files being transformed
+  to actual post urls, drafts, pre-commit hooks, password management etc.
+* And a lot more!
+
 I've been using Livejournal since 2005 and never had a reason to
 switch to anything else. I almost never write on political topics and
 don't really care where it's hosted. I don't even need many
 connections but do value some and the fact that livejournal provides
-near zero way to discover other blogs sometimes works more as a
+near zero ways to discover other blogs sometimes works more as a
 benefit than a drawback, because with current state of things when
 majority of users migrated to Facebook or Instagram, there is not that
 much to read there. It's not engaging as Facebook, and that's
@@ -2137,6 +2150,7 @@ Thank you for reading.
 [buildapp script]: https://github.com/can3p/cl-journal/blob/5659a99e89cc392fbd56ee3659e70ee8743e2b3e/Makefile
 [main package]: https://github.com/can3p/cl-journal/blob/5659a99e89cc392fbd56ee3659e70ee8743e2b3e/src/main.lisp
 [cl-brewer]: https://github.com/can3p/cl-brewer
+[cl-journal]: https://github.com/can3p/cl-journal
 [magic-ed]: https://github.com/sanel/magic-ed
 [xml-rpc]: https://www.livejournal.com/doc/server/ljp.csp.xml-rpc.protocol.html
 [s-xml-rpc]: https://common-lisp.net/project/s-xml-rpc/
