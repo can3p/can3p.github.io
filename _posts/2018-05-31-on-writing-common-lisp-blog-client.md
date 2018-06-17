@@ -1724,7 +1724,177 @@ the output.
 
 ### Loop
 
+If were to write this post a couple of months ago I wouldn't mention
+loop at all. I came to Common Lisp from clojure and my brain was
+really fixed on immutable data structures, hence I tried to avoid
+any imperative constructs. Another moment was that loop had a
+controversial perception across community some of which prefered
+`iterate` and the rest tried to avoid both.
+
+The turning point was when I started writing fetch and sync logic and
+I had to iterate there a lot a many different ways. I tried loop once
+then twice and then I ended up using it all over the place. Why so?
+
+Simply because loop unify all different looping constructs that other
+languages have like `for` or `while` or even `map` in one unified call
+and in addition to that gives local bindings all an easy way to execute
+body only under certain conditions and return from any point, and I'm
+sure there are lot's of things I'm not aware of.
+
+Let me show a couple of especially impressive examples from the code.
+Here is a function that prints a list of files that need to be merged:
+
+```common_lisp
+(defun get-merge-candidates (db)
+  (let ((store (restore-source-posts (fetch-store db)))
+        (ht (to-hash-table *posts*))
+        (visited (make-hash-table)))
+    (loop for event in (events store)
+          for itemid = (getf (getf event :event) :itemid)
+          for post = (gethash itemid ht)
+          when (and (not (gethash itemid visited))
+                    (or (not post)
+                        (older-than-p post (getf event :sync-ts))))
+            collect
+            (progn
+              (setf (gethash itemid visited) t)
+              (if (null post)
+                  (format nil "~a - ~a"
+                          itemid
+                          (getf (getf event :event) :url))
+                  (format nil "~a - ~a (~a)"
+                          itemid
+                          (getf (getf event :event) :url)
+                          (filename post))
+                  )))))
+```
+
+Iteration goes over `(events store)`, two other `for`s just like local
+bindings. `when` part  uses local bindings as well as bindings from function
+scope to understand if this particular post needs to be merged. If this
+check succeeds `collect` executes next form and and appends it to a resulting
+list to be returned. In this body we update a list of visited posts so that
+any duplicate post is ignored.
+
+Next example is silly but show loop can serve as a loop construct.
+
+```common_lisp
+(defun lj-get-server-ts ()
+  ;; scary hack to get server ts in a single timezone
+  (labels ((r () (getf (lj-getevents '(1000000)) :lastsync))) ;; something big enough to have empty lookup
+    (loop with a = (r)
+          do
+             (let ((b (r)))
+               (format t "~a~%" b)
+               (when (older-p a b 10) (return a))
+               (when (older-p b a 10) (return b))))))
+```
+
+`with` serves as a local binding there and whenever we want to finish
+we can simply call return and it's argument will be the return value.
+
+Yet another loop combo allows an easy traversal of plist with destructuring
+of key/value pair:
+
+```common_lisp
+(loop for (key value . rest)
+        on (getf post-file :fields)
+      by #'cddr
+      do
+         (format out "~a: ~a~%"
+                 (string-downcase (symbol-name key))
+                 value)))
+```
+
+From examples above you can already spot the greatest weakness of this
+macro - it's syntax is so diverse that using it looks natural only
+when you read it, writing tends to be more in trial and error fields.
+
 ### Macros
+
+There is lot written about macros and their pros and cons. Main drawback
+for me is that their usage or, better, usage of nonstandard ones has a
+huge impact in readability of the code simply because you need to go
+and understand them first and macros are not the easiest thing to understand,
+especially for people without years of full time lisp development like
+me.
+
+From the other side writing them is a total pleasure because you can
+watch the language mold under your hands. I'll show one example there
+and it's naming is probably totally incorrect, but it solved the issue I
+had.
+
+To print status I had to print information about different states - print
+a list of new files, drafts, updated files etc. Each of them had it's own
+sub to product a list and it's own text of course. To make it more human
+friendly I wanted to have not one but three text - for zero, one and many
+results.
+
+I wrote initial logic as a function and amount of duplication became
+obvious very soon. I decide to give macros ago and imagined a perfect
+way to generate a status of certain kind. I could do macro that does
+code execution in place but that would sit in the body of a single
+function inflate it's size. Based on that I decided to to make a macro
+to generation a function.
+
+This was a perfect syntax on my opinion:
+
+```common_lisp
+(with-files new (get-new-files)
+  "There are ~a new files to publish~%"
+  "There is a new file to publish~%"
+  "No new files to publish~%")
+```
+
+That would generate a function with the name `with-new-files` that
+takes a callback to print a list that's a result of calling `(get-new-files)`
+form and prints header by itself and items list with this callback.
+
+Callback was an extension point to remove any constraint on type of
+list items and let actual code deal with it.
+
+With the macro implemented actual status code again became really trivial.
+
+```common_lisp
+(defun print-status ()
+  (flet ((print-names (items)
+           (format t "~%~{    ~a~^~%~}~%~%" (mapcar #'filename items)))
+         (print-string-names (items)
+           (format t "~%~{    ~a~^~%~}~%~%" items))
+         )
+    (with-draft-files #'print-string-names)
+    (with-new-files #'print-names)
+    (with-modified-files #'print-names)
+    (with-deleted-files #'print-names)
+    (with-fetched-files #'print-string-names)))
+```
+
+And here is the actual macro code:
+
+```common_lisp
+(defmacro with-files (name accessor multiplemsg singlemsg nomsg)
+  (let ((fn-name (intern
+                  (concatenate 'string
+                               "WITH-"
+                               (symbol-name name)
+                               "-FILES"))))
+    `(defun ,fn-name (cb)
+       (let ((items ,accessor))
+         (if (> (length items) 0)
+             (progn
+               (if (> (length items) 1)
+                   (format t ,multiplemsg (length items))
+                   (format t ,singlemsg))
+               (funcall cb items))
+             (format t ,nomsg))))))
+```
+
+What happens there is I'm assembling function name and then return
+function definition with placeholders replace with the data from
+arguments.
+
+Macro is not a tool for any task but it can be really life changing
+if you only ever programmed with macroless languages.
 
 ### Format
 
