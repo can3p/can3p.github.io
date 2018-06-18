@@ -3,6 +3,7 @@ layout: post
 title: "On writing a blog client in Common Lisp"
 keywords: "common lisp, livejournal, blog, cl-journal"
 category: blog
+tag: building-blog-client
 ---
 
 Once I decided to sit down and write a perfect blog client for
