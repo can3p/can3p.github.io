@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Part 3: fetch it!"
+title: "Part 3: Fetch it!"
 keywords: "common lisp, livejournal, blog, cl-journal"
 category: blog
 tag: building-blog-client

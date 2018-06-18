@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Part 5: gems and pitfalls"
+title: "Part 5: Gems and pitfalls"
 keywords: "common lisp, livejournal, blog, cl-journal"
 category: blog
 tag: building-blog-client

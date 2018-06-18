@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Part 4: merge"
+title: "Part 4: Merge"
 keywords: "common lisp, livejournal, blog, cl-journal"
 category: blog
 tag: building-blog-client
