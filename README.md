@@ -24,4 +24,9 @@ $ bundle exec jekyll build
 
 ## Notes
 
-All contents represent solely my own opinion. Feel free to reuse and repost.
+All contents represent solely my own opinion. Feel free to reuse and repost
+for personal purposes. For commercial use, please contact me.
+
+## Contact
+
+Dmitry Petrov, dpetroff@gmail.com
