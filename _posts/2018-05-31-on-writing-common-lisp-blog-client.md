@@ -1777,12 +1777,10 @@ whatever I found fit with the output.
 
 ### Special variables
 
-Special variables is yet another super powerful concept. @TODO: I need
-to check their proper name.
-
-What's special about them is that they use dynamic binding instead of
-a lexical one and that means the changing the value of such not only
-for the current scope but for all the code that is called from there.
+Special variables is yet another super powerful concept. What's
+special about them is that they use dynamic binding instead of a
+lexical one and that means the changing the value of such not only for
+the current scope but for all the code that is called from there.
 
 This gives a powerful weapon to penetrate through layers of
 abstractions without a cost of passing this variable through or making
@@ -2171,6 +2169,6 @@ Thank you for reading.
 [cl-journal.t]: https://github.com/can3p/cl-journal/blob/5659a99e89cc392fbd56ee3659e70ee8743e2b3e/t/cl-journal.lisp#L96
 [ljprotocol]: https://github.com/apparentlymart/livejournal/blob/master/cgi-bin/ljprotocol.pl
 
-[reddit slugify]: https://reddit.com/r/common_lisp/blabla
+[reddit slugify]: https://www.reddit.com/r/Common_Lisp/comments/67neph/clslug_slugify_uris_camelcase_remove_accentuation/
 [blog repo]: https://github.com/can3p/can3p.github.io/issues
 [cl-journal repo]: https://github.com/can3p/cl-journal/issues
