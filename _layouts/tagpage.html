@@ -5,21 +5,25 @@ layout: default
 <div class="links">
   <h1>{{ page.title }}</h1>
 
+  {% assign curDate = site.time | date: '%s' %}
   {% for post in site.tags[page.tag] %}
-    {% capture day %}{{ post.date | date: '%m%d%Y' }}{% endcapture %}
-    {% capture nday %}{{ post.next.date | date: '%m%d%Y' }}{% endcapture %}
+    {% assign postStartDate = post.date | date: '%s' %}
+    {% if postStartDate <= curDate %}
+      {% capture day %}{{ post.date | date: '%m%d%Y' }}{% endcapture %}
+      {% capture nday %}{{ post.next.date | date: '%m%d%Y' }}{% endcapture %}
 
-    {% if day != nday %}
-        <div class="link-date">{{ post.date | date_to_string }}</div>
-    {% endif %}
-    <div class="link">
+      {% if day != nday %}
+          <div class="link-date">{{ post.date | date_to_string }}</div>
+      {% endif %}
+      <div class="link">
 
-      <h2 class="link-title"><a href="{{ post.url }}">{{ post.title }}</a></h2>
+        <h2 class="link-title"><a href="{{ post.url }}">{{ post.title }}</a></h2>
 
-      <div class="link-review">
-        {{ post.excerpt }}
+        <div class="link-review">
+          {{ post.excerpt }}
+        </div>
+        <div><a href="{{ post.url }}">Read more</a></div>
       </div>
-      <div><a href="{{ post.url }}">Read more</a></div>
-    </div>
+    {% endif %}
   {% endfor %}
 </div>
