@@ -50,7 +50,7 @@ problem with it was that I haven't found a way to install scripts from local
 repository, so I had to do manual symlinks here and there to make it work.
 
 Since there is no central place for the documentation, I mainly used Practical
-Common lisp book, [common lisp cookbook](http://cl-cookbook.sourceforge.net) and
+Common lisp book, [common lisp cookbook](http://lispcookbook.github.io/cl-cookbook/) and
 [quickdocs website](http://quickdocs.org).
 
 One of other unsolved issued for me was password prompt. I didn't find a proper
