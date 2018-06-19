@@ -6,10 +6,11 @@ category: blog
 tag: building-blog-client
 ---
 
-All the points written below don't have a unified perception in lisp
-community and are strictly my opinions. Whenever I discovered them I
-really enjoyed using them every single second and missed them a lot in
-usual (tm) languages.
+All the points below summarize the things I enjoy using in Common Lisp
+and are not especially the ones preferred or recommended by
+community. Also proof reading showed that many of the examples were
+already mentioned earlier, but I still think it's good to have them
+all in one place for the reference. Here you go.
 
 ### Generic functions
 
@@ -235,9 +236,9 @@ Here is a function that prints a list of files that need to be merged:
                   )))))
 ```
 
-Iteration goes over `(events store)`, two other `for`s just like local
-bindings. `when` part uses local bindings as well as bindings from
-function scope to understand if this particular post needs to be
+Iteration goes over `(events store)`, two other `for`s work just like
+local bindings. `when` part uses local bindings as well as bindings
+from function scope to understand if this particular post needs to be
 merged. If this check succeeds `collect` executes next form and
 appends it to a resulting list to be returned. In this body we update
 a list of visited posts so that any duplicate post is ignored.
@@ -274,7 +275,8 @@ destructuring of key/value pair:
 
 From examples above you can already spot the greatest weakness of this
 macro - it's syntax is so diverse that using it looks natural only
-when you read it, writing tends to be more in trial and error fields.
+when you read it, writing tends to be more in the field of trial and
+error.
 
 ### Macros
 
@@ -290,18 +292,18 @@ watch the language mold under your hands. I'll show one example there
 and it's naming is probably totally incorrect, but it solved the issue
 I had.
 
-To print status I had to print information about different states -
-print a list of new files, drafts, updated files etc. Each of them had
-it's own sub to produce a list and it's own text of course. To make it
-more human-friendly I wanted to have not one but three text - for
-zero, one and many results.
+To print the status I had to print information about different
+states - print a list of new files, drafts, updated files etc. Each of
+them had it's own sub to produce a list and it's own text of
+course. To make it more human-friendly I wanted to have not one but
+three text - for zero, one and many results.
 
 I wrote initial logic as a function and amount of duplication became
-obvious very soon. I decide to give macros ago and imagined a perfect
-way to generate a status of a certain kind. I could do a macro that does
-code execution in place but that would sit in the body of a single
-function inflate it's size. Based on that I decided to make a macro
-to generate a function.
+obvious very soon. I decided to give macros ago and imagined a perfect
+way to generate a status of a certain kind. I could do a macro that
+does code execution in place but that would sit in the body of a
+single function inflate it's size. Based on that I decided to make a
+macro to generate a function definition.
 
 This was a perfect syntax in my opinion:
 
@@ -372,7 +374,7 @@ much more powerful `format` is.
 
 First of all, it works on streams, that gives a lot of power on their
 own, as I wrote earlier. Next it literary has all functionality
-necessary to print to always print to console in one command.
+necessary to always print to output with one call.
 
 It's possible to print a quoted value, a value without surrounding
 quotes, add all sorts of paddings to the printed data and to even
@@ -511,7 +513,7 @@ will require a good amount of work of course. The first step would be
 to abstract away remote api and the second one will be to make
 `<post>` and `<post-file>` classes service agnostic. It'll be even
 easier if we do not set the aim to support the same feature set for
-every single platform and provide a `cl-journal as a platform that can
+every single platform and provide a cl-journal as a platform that can
 give the same experience as it does now for Livejournal with service
 specific changes.
 
@@ -543,31 +545,4 @@ small function with simple logic.
 
 Thank you for reading.
 
-
-
-[roswell script]: https://github.com/can3p/cl-journal/blob/5659a99e89cc392fbd56ee3659e70ee8743e2b3e/roswell/cl-journal.ros
-[buildapp script]: https://github.com/can3p/cl-journal/blob/5659a99e89cc392fbd56ee3659e70ee8743e2b3e/Makefile
-[main package]: https://github.com/can3p/cl-journal/blob/5659a99e89cc392fbd56ee3659e70ee8743e2b3e/src/main.lisp
-[cl-brewer]: https://github.com/can3p/cl-brewer
-[cl-journal]: https://github.com/can3p/cl-journal
-[magic-ed]: https://github.com/sanel/magic-ed
-[xml-rpc]: https://www.livejournal.com/doc/server/ljp.csp.xml-rpc.protocol.html
-[s-xml-rpc]: https://common-lisp.net/project/s-xml-rpc/
-[rpc4cl]: https://github.com/pidu/rpc4cl
-[cl-arrows]: https://github.com/nightfly19/cl-arrows
-[lj-api]: https://github.com/can3p/cl-journal/blob/5659a99e89cc392fbd56ee3659e70ee8743e2b3e/src/lj-api.lisp
 [db]: https://github.com/can3p/cl-journal/blob/5659a99e89cc392fbd56ee3659e70ee8743e2b3e/src/db.lisp
-[file-api]: https://github.com/can3p/cl-journal/blob/5659a99e89cc392fbd56ee3659e70ee8743e2b3e/src/file-api.lisp#L35
-[markdownify]: https://github.com/can3p/cl-journal/blob/5659a99e89cc392fbd56ee3659e70ee8743e2b3e/src/markdownify.lisp
-[cl-journal merge]: https://github.com/can3p/cl-journal/blob/5659a99e89cc392fbd56ee3659e70ee8743e2b3e/src/markdownify.lisp#L243
-[markdown]: https://github.com/can3p/cl-journal/blob/5659a99e89cc392fbd56ee3659e70ee8743e2b3e/src/markdown.lisp
-[main]: https://github.com/can3p/cl-journal/blob/5659a99e89cc392fbd56ee3659e70ee8743e2b3e/src/main.lisp
-[syncitems]: https://www.livejournal.com/doc/server/ljp.csp.xml-rpc.syncitems.html
-[getevents]: https://www.livejournal.com/doc/server/ljp.csp.xml-rpc.getevents.html
-[sync_logic]: https://github.com/can3p/cl-journal/commit/93695d3b0de4a9cdb37ee7b79a30de5bd2ed0370
-[cl-journal.t]: https://github.com/can3p/cl-journal/blob/5659a99e89cc392fbd56ee3659e70ee8743e2b3e/t/cl-journal.lisp#L96
-[ljprotocol]: https://github.com/apparentlymart/livejournal/blob/master/cgi-bin/ljprotocol.pl
-
-[reddit slugify]: https://www.reddit.com/r/Common_Lisp/comments/67neph/clslug_slugify_uris_camelcase_remove_accentuation/
-[blog repo]: https://github.com/can3p/can3p.github.io/issues
-[cl-journal repo]: https://github.com/can3p/cl-journal/issues

@@ -26,9 +26,10 @@ result in term of a hierarchy of objects and it proved to be difficult
 to maintain.
 
 Instead of that, I've settled with [rpc4cl][rpc4cl] which simply
-returns a nested list and that's precisely what I need. To simplify
-the code I made s simple wrapper that takes adds host information to
-every call:
+returns a nested list and that's precisely what I need. Now that I'm
+writing this, it appears that author removed rpc4cl from Github which
+is very unforunate. To simplify the code I made a simple wrapper that
+takes adds host information to every call:
 
 ```common_lisp
 (defun rpc-call (method &rest method-parameters)
@@ -48,9 +49,9 @@ example a sub to get a so-called challenge from Livejournal service:
 
 Please note `->` from [cl-arrows][cl-arrows] here. I seriously cannot
 imagine my lisp coding with it, because using the arrow prevents all
-sorts of deep nestings and keeps code clear. Since it's not always
+sorts of deep nesting and keeps the code clear. Since it's not always
 easy to remember in which place the previous result goes by default in
-the last code I always use `-<>` instead which allows putting a
+the latest code I always use `-<>` instead which allows putting a
 placeholder `<>` that will be replaced with the result. This way makes
 argument placing more explicit. As an example `getchallenge` can be
 transformed to this:
@@ -73,24 +74,25 @@ variables - `*service-login*`, `*service-password*`,
 I can do any experimentation with the api with help of all the power
 the language provides. And after I [wrapped][lj-api] all service
 endpoints as functions I literally could do all blog manipulations
-without leaving the editor. It proved to be so useful that I kept the
+without leaving the editor. It proved to be so stable that I kept the
 running lisp process for months without any need for a restart.
 
 The only improvement I made recently was to add unit tests into the
-toolbox and it works wonderfully with repl-driven development. Why is
-it cool?  With a usual way of developing one of the hardest bits is to
-recreate an environment where tests happen, and in cases where there
-is no obvious way to implement something, changing implementation can
-have a lot of impact on how tests are written. With Common Lisp, I can
-experiment with code freely until I get something working without
-overhead related to environment and create supporting architecture
-only after that and I can still run all the tests right there! Change
-a function and recompile only one specific test till everything works
-and then compile the whole suite to see if everything's in place.
+project development workflow and it works wonderfully with repl-driven
+development. Why is it cool?  With a usual way of developing one of
+the hardest bits is to recreate an environment where tests happen, and
+in cases where there is no obvious way to implement something,
+changing implementation can have a lot of impact on how tests are
+written. With Common Lisp, I can experiment with code freely until I
+get something working without overhead related to environment and
+create supporting architecture only after that and I can still run all
+the tests right there! Change a function and recompile only one
+specific test till everything works and then compile the whole suite
+to see if everything's in place.
 
-I'll talk about this bit later, it's so fascinating that I can safely
-say that it's one of the features that really make me stick to the
-language, I enjoy every second of it.
+It's so fascinating that I can safely say that it's one of the
+features that really make me stick to the language, I enjoy every
+second of it.
 
 ### Storage
 
@@ -168,21 +170,18 @@ Super simple, after that saving database to a file became trivial:
 ```
 
 `*posts*` here is another global var that holds a reference to the
-open database and *posts-file* is a relative path pointing where the
+open database and `*posts-file*` is a relative path pointing where the
 posts file should live.
 
 What happens in the sub is that we pretty print s-expression that
 happens to be a result of `to-list` method call into a stream that
 happens to be an open file. `with-standard-io-syntax` macro ensures
-that all the dynamic variables are reset to their default state for
-the time of printing.
+that all the output related dynamic variables are reset to their
+default state for the time of printing.
 
-After this is done we can use yet another Common Lisp feature that
-makes it trivial to save changes on all meaningful actions. Common
-Lisp supports aspect-oriented programming in a sense of auxiliary
-methods. That means that for any generic function we can hook into
-any point during its call. I had generics for publishing, updating
-and deleting the post and all save logic is as simple as:
+After this was done using auxiliary methods made it trivial to save
+changes on all meaningful actions. I had generics for publishing,
+updating and deleting the post and all save logic is as simple as:
 
 ```common_lisp
 (defmethod publish-post :after ((db <db>) (post-file <post-file>))
@@ -223,8 +222,8 @@ changes and we need to handle that somehow and that's why database has
 What I decided to do was to do database migrations right during the
 read phase. In order to do that I find a unique feature for the next
 version of config, do migration and run the same function recursively
-and by this way eventually get a most uptodate structure that will be
-nicely serialized on next save.
+and by this way eventually get a most up-to-date structure that will
+be nicely serialized on next save.
 
 ```common_lisp
 (defun create-db-from-list (l)
@@ -258,8 +257,8 @@ function that would take a file, parse it, convert markdown into html
 and publish it as a post.
 
 Task itself is also recursive meaning that after we parse a file and
-get a list of fields plus a text we need to parse the again to map all
-the fields to a representation Livejournal understands.
+get a list of fields plus a text we need to parse the result again to
+map all the fields to a representation Livejournal understands.
 
 The first part you can check out an [implementation][file-api] of
 `parse-post-file` function. What it does is it reads header line by
@@ -314,7 +313,7 @@ journal than my own:
 This conditional is not that elegant by itself, but the general pattern
 proved to be very useful and I used it in many different places.
 
-Once I got an even in Livejournal view of it the publish function
+Once I got an event in Livejournal view of it the publish function
 itself becomes really simple:
 
 ```common_lisp
@@ -368,7 +367,7 @@ object instance.
   (format stream "<post filename:~a url:~a>~%" (filename post) (url post)))
 ```
 
-The last bit before implementing cli interface is a state management
+The last bit before implementing cli interface is the state management
 and it can also be easily implemented using the same operations on
 `<post>` and `<post-file>` objects.
 
@@ -505,7 +504,7 @@ in love with it some time after that.
 
 Last fun bit from the basic implementation is about markdown
 formatting.  I decided to use it from the very beginning simply because
-it's an order of magnitude better to write then html and still allows
+it's an order of magnitude better to write than html and still allows
 to have markup in place comparing to real plain text.
 
 And of course, both vim and emacs have excellent markdown modes and
@@ -520,11 +519,12 @@ error-prone. If all links in the source code point to other markdown
 files, that means that whenever I decided to republish all posts
 somewhere else, I could have all the links resolved.
 
-For markdown rendering I used `cl-markdown` library and I'm not sure
-if it was the best choice possible. Why? Because it's source code is
-close to impenetrable to me and documentation is almost non-existent.
-Maybe I'm not a good reader, but I took me many evenings to get my
-head around library internals and to understand ways to extend it.
+For markdown rendering I used [cl-markdown][cl-markdown] library and
+I'm not sure if it was the best choice possible. Why? Because it's
+source code is close to impenetrable to me and documentation is almost
+non-existent.  Maybe I'm not a good reader, but I took me several
+evenings to get my head around library internals and to understand
+ways to extend it.
 
 For links generation I kept the assumption that I only have one
 database open at a time and it live in `*posts*` variable.
@@ -535,7 +535,7 @@ extend it the way I want.
 Inline elements are rendered using `render-span-to-html` generic
 function and Common Lisp rocks again there because it allows adding
 an auxiliary method for it and target a specific set of arguments, that
-allows to keep method body clean from unnecessary checks:
+allows to keep method body clean from unnecessary modifications:
 
 ```common_lisp
 (defmethod render-span-to-html :before
@@ -583,29 +583,12 @@ There is one more group I haven't talked about, which is `fetch`,
 `merge` and `remerge` and this is what I'm going to talk about next.
 
 
-[roswell script]: https://github.com/can3p/cl-journal/blob/5659a99e89cc392fbd56ee3659e70ee8743e2b3e/roswell/cl-journal.ros
-[buildapp script]: https://github.com/can3p/cl-journal/blob/5659a99e89cc392fbd56ee3659e70ee8743e2b3e/Makefile
-[main package]: https://github.com/can3p/cl-journal/blob/5659a99e89cc392fbd56ee3659e70ee8743e2b3e/src/main.lisp
-[cl-brewer]: https://github.com/can3p/cl-brewer
-[cl-journal]: https://github.com/can3p/cl-journal
-[magic-ed]: https://github.com/sanel/magic-ed
 [xml-rpc]: https://www.livejournal.com/doc/server/ljp.csp.xml-rpc.protocol.html
 [s-xml-rpc]: https://common-lisp.net/project/s-xml-rpc/
-[rpc4cl]: https://github.com/pidu/rpc4cl
+[rpc4cl]: http://quickdocs.org/rpc4cl/
 [cl-arrows]: https://github.com/nightfly19/cl-arrows
 [lj-api]: https://github.com/can3p/cl-journal/blob/5659a99e89cc392fbd56ee3659e70ee8743e2b3e/src/lj-api.lisp
-[db]: https://github.com/can3p/cl-journal/blob/5659a99e89cc392fbd56ee3659e70ee8743e2b3e/src/db.lisp
 [file-api]: https://github.com/can3p/cl-journal/blob/5659a99e89cc392fbd56ee3659e70ee8743e2b3e/src/file-api.lisp#L35
-[markdownify]: https://github.com/can3p/cl-journal/blob/5659a99e89cc392fbd56ee3659e70ee8743e2b3e/src/markdownify.lisp
-[cl-journal merge]: https://github.com/can3p/cl-journal/blob/5659a99e89cc392fbd56ee3659e70ee8743e2b3e/src/markdownify.lisp#L243
+[cl-markdown]: http://quickdocs.org/cl-markdown/
 [markdown]: https://github.com/can3p/cl-journal/blob/5659a99e89cc392fbd56ee3659e70ee8743e2b3e/src/markdown.lisp
 [main]: https://github.com/can3p/cl-journal/blob/5659a99e89cc392fbd56ee3659e70ee8743e2b3e/src/main.lisp
-[syncitems]: https://www.livejournal.com/doc/server/ljp.csp.xml-rpc.syncitems.html
-[getevents]: https://www.livejournal.com/doc/server/ljp.csp.xml-rpc.getevents.html
-[sync_logic]: https://github.com/can3p/cl-journal/commit/93695d3b0de4a9cdb37ee7b79a30de5bd2ed0370
-[cl-journal.t]: https://github.com/can3p/cl-journal/blob/5659a99e89cc392fbd56ee3659e70ee8743e2b3e/t/cl-journal.lisp#L96
-[ljprotocol]: https://github.com/apparentlymart/livejournal/blob/master/cgi-bin/ljprotocol.pl
-
-[reddit slugify]: https://www.reddit.com/r/Common_Lisp/comments/67neph/clslug_slugify_uris_camelcase_remove_accentuation/
-[blog repo]: https://github.com/can3p/can3p.github.io/issues
-[cl-journal repo]: https://github.com/can3p/cl-journal/issues

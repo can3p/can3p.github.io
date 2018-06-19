@@ -9,7 +9,7 @@ tag: building-blog-client
 Once I decided to sit down and write a perfect blog client for
 me. Since it was not just about the result but also about the process I
 chose a language I enjoyed the most and this is how it ended up being
-written in Common Lisp. I didn't think I'll get that far and I'd like
+written in Common Lisp. I didn't think I'd get that far and I'd like
 to share my experience in the process along with all little details
 that I had to go through during the implementation.
 
@@ -54,11 +54,11 @@ connections but do value some and the fact that Livejournal provides
 near zero ways to discover other blogs sometimes works more as a
 benefit than a drawback, because with the current state of things when
 majority of users migrated to Facebook or Instagram, there is not that
-much to read there. It's not engaging as Facebook, and that's
+much to read there. It's not as engaging as Facebook, and that's
 *good*. The other benefit of the service is that it's a very good site
-to write long posts like this and people actually do that and there is
-a ton of beautiful content there, if you're lucky to find it of
-course.
+to write long posts like this one and people actually do that and
+there is a ton of beautiful content there, if you're lucky to find it
+of course.
 
 My main problem with Livejournal always was that I didn't really own
 the content in a sense of storage. The blog is mine, ok, but if web
@@ -86,22 +86,23 @@ What does perfect blogging experience look like? It's when you write
 the text in your favorite editor, save it, push it to git and it's
 published. And it's when you can just grep your posts to remember
 something from the past or when you can do bulk updates to all the
-posts with system tools that you're used too and get all changes
+posts with system tools that you're used to and get all changes
 published at once.
 
 This was my thought process and this is what became a base of
 requirements. A client should be able to:
 
-* See new markdown files to publish
-* See modified markdown files to submit changes
-* See deleted markdown files and be able to delete them in the service
+* See new markdown files and publish them
+* See modified markdown files and submit changes
+* See deleted markdown files and  delete them in the service
 * Bonus points if it all happens automagically on git commit/push
 
 That's a simple version of the client that implies that a folder with
-markdown files acts as a master database that gets replicated to the
+markdown files acts as a master database that gets replicated to a
 slave which in this case is web service. An obvious drawback here is
 that I lose any other ways to update content, be it via service web
 interface or it's mobile app. So an even more perfect client should be
+able to:
 
 * Fetch any updates from the service
 * Transform them into markdown format so that all synced posts can be
@@ -110,23 +111,21 @@ interface or it's mobile app. So an even more perfect client should be
 One final thought was that since all editing happens in an ordinary
 editor, an obvious way to implement client is to make a cli tool for
 that. And if you check requirement you'll spot that they resemble
-typical git operations a lot and it makes sense to mimic git when it
-makes sense.
+typical git operations a lot and it makes sense to mimic git whenever
+it makes sense.
 
 ## Common Lisp nontrivialities
 
 When you start working on a really big task, the only thing that can
 be said for sure is that there are a lot of unknowns. And if in a
 familiar language most of the unknowns lie in the business domain, in
-my case a pile of unknowns also waited to found on the language and
+my case a pile of unknowns also waited to be found on the language and
 ecosystem side. Some of the things that I thought to be trivial and
 that were doable in many languages appeared to be not trivial at all
 in Common Lisp and that required a lot of time to grasp to get a full
-picture. Many of the libraries I used lacked good or any documentation
-and looked not maintained, however, on a positive side most of them
-worked really well in the end.
+picture.
 
-Let me go through the topics that appeared to be nontrivial.
+Let me go through some of the topics that appeared to be nontrivial.
 
 
 ### Current working directory
@@ -208,16 +207,19 @@ And to double check.
     0
 
 And that trailing forward slash in pathname is important, don't lose
-it.  As you see, `*default-pathname-defaults*` and `(uiop/os::chdir
-"second_folder")` are independent and influence different things and
-to keep it consistent for both standard library and external calls
-it's necessary to call them both.
+it.  As you see, `*default-pathname-defaults*` and `uiop/os::chdir`
+are independent and influence different things and to keep it
+consistent for both standard library and external calls it's necessary
+to call them both.
 
 It's worth saying that this distinction is of particular importance
 for repl based development, because when the image starts these two
 values are most probably aligned.
 
-Since I mentioned `uiop/run-program`, let's talk about it.
+Another note is that the behaviour described belongs totally so sbcl,
+other implementations may behave differently.
+
+Since I mentioned `uiop/run-program`, let's see how I used it.
 
 ### User input
 
@@ -235,10 +237,10 @@ as
 But let's say that you want to read an actual input. There is a
 `read-line` function that can help. One complication is a prompt
 message that you may want to display. Simply formatting it to `STDOUT`
-will result in bad results in emacs in a sense that prompt text will be
-shown after actual input. To solve this I found that it's necessary to
-force output on a used stream and now prompt function looks like this
-for me:
+will result in bad results in emacs in a sense that prompt text will
+be shown after actual input. To solve this I [found][force output]
+that it's necessary to force output on a used stream and now prompt
+function looks like this for me:
 
 ```common_lisp
 (defun prompt-read (x)
@@ -250,7 +252,7 @@ for me:
 And that's not all, because there is another possible user input which
 is passwords. Why is it unique? You probably will not want to enter it
 clear text. Unfortunately, I didn't find a proper way of doing this
-magic inside of lisp and in the end a solution was to use `stty` to
+magic inside of lisp and in the end the solution was to use `stty` to
 manipulate input visibility and `run-program` and internal bash `read`
 function to get user input:
 
@@ -263,16 +265,21 @@ function to get user input:
     ))
 ```
 
+Unfortunately this workaround doesn't behave well in Emacs slime
+session.
+
 ### Storing passwords
 
-Next two are not Common Lisp specific but might be of interest for
-curious.  Since I read the password I wanted to store it to avoid
-asking again and again. However, I wasn't fond of storing it in clear
-text and decided to explore system-specific solutions
+Next two are not Common Lisp specific but might be of interest for the
+curious ones.  Since I read the password I wanted to store it to avoid
+asking for it again and again. However, I wasn't fond of storing it in
+clear text and decided to explore system-specific solutions.
 
-Mac os is perfect in this case because of built-in program `security`
-that allows to store and retrieve passwords. For Linux (Ubuntu in
-particular) there are no built-ins, however, after some search
+Mac os is perfect in this case because of built-in program
+[security][mac os security] that allows to store and retrieve
+passwords. For Linux (Ubuntu in particular) there are no built-ins,
+however, after some search I found [secret tools][libsecret] that
+provided similar functionality:
 
 ```common_lisp
 (defun get-password-cmd (login url)
@@ -301,24 +308,29 @@ place an additional restriction there and make it easy to run and
 install it both in a dev environment and as an easily installable package.
 
 A task of running the system as a script is perfectly solved by
-`roswell` [script][roswell script] and compilation is done with a
-[buildapp][buildapp script]. Since script cannot be used to build a
-system and roswell and buildapp pass slightly different parameters to
-the entry point I ended up moving entry point logic into a [separate
-package][main package].
+`roswell` [script][roswell script] and compilation is [done][buildapp
+script] with a [buildapp][buildapp]. Since script cannot be used by
+buildapp to build a system and roswell and buildapp pass slightly
+different parameters to the entry point I ended up moving entry point
+logic into a [separate package][main package].
 
-Buildapp itself works awesome in case quicklisp specifically and lisp
-is set up on the computer, however, I wanted to make it really easy
-installable and putting a binary file on Github release doesn't sound
-right then. The usual way to install a program on MacOs nowadays is
-Homebrew. A specific requirement for homebrew formulas is not to use
-any kind of additional package manager to build a program, hence
-quicklisp could not be used as is and I looked for a workaround.
+Buildapp itself works amazingly well in case lisp and quicklisp are
+set up on the computer, however, I wanted to make it really easy
+installable and attaching a binary file to Github release doesn't
+sound user friendly for cli tool. The usual way to install a program
+on Mac OS nowadays is via Homebrew. A specific requirement for
+homebrew formulas is not to use any kind of additional package manager
+to build a program, hence quicklisp could not be used as is and I
+looked for a workaround.
 
 The result was [cl-brewer][cl-brewer] system that generates a Homebrew
 formula with urls pointing to all the dependencies so that formula can
 download them all and then use quicklisp and buildapp to make a binary
 without any additional downloads.
+
+For Linux distributions I didn't bother to create a package, however
+making a deb-package or a snap or whatever looks easy enough. It
+just waits for a hero that will do it.
 
 A little note about arguments parsing. There are libraries for this
 task in the ecosystem but I ended up using none of them. I wanted
@@ -334,8 +346,9 @@ because actual implementation differs by Common Lisp implementation
 used.
 
 Fortunately, I found [magic-ed][magic-ed] on Github and it magically
-did the right thing. Quicklisp didn't have it and I ended up including
-it in my code to simplify the build process.
+did the right thing (again, not from inside of emacs, which is
+unfortunate). Quicklisp didn't have it and I ended up including it in
+my code to simplify the build process.
 
 ### Pre-commit hook
 
@@ -361,30 +374,18 @@ cl-journal push
 git add posts.lisp
 ```
 
+Of course, I didn't figure everything out beforehand, but it took long
+enough to be worth sharing. Now let's get to the client internals.
 
-[roswell script]: https://github.com/can3p/cl-journal/blob/5659a99e89cc392fbd56ee3659e70ee8743e2b3e/roswell/cl-journal.ros
-[buildapp script]: https://github.com/can3p/cl-journal/blob/5659a99e89cc392fbd56ee3659e70ee8743e2b3e/Makefile
-[main package]: https://github.com/can3p/cl-journal/blob/5659a99e89cc392fbd56ee3659e70ee8743e2b3e/src/main.lisp
-[cl-brewer]: https://github.com/can3p/cl-brewer
-[cl-journal]: https://github.com/can3p/cl-journal
-[magic-ed]: https://github.com/sanel/magic-ed
-[xml-rpc]: https://www.livejournal.com/doc/server/ljp.csp.xml-rpc.protocol.html
-[s-xml-rpc]: https://common-lisp.net/project/s-xml-rpc/
-[rpc4cl]: https://github.com/pidu/rpc4cl
-[cl-arrows]: https://github.com/nightfly19/cl-arrows
-[lj-api]: https://github.com/can3p/cl-journal/blob/5659a99e89cc392fbd56ee3659e70ee8743e2b3e/src/lj-api.lisp
-[db]: https://github.com/can3p/cl-journal/blob/5659a99e89cc392fbd56ee3659e70ee8743e2b3e/src/db.lisp
-[file-api]: https://github.com/can3p/cl-journal/blob/5659a99e89cc392fbd56ee3659e70ee8743e2b3e/src/file-api.lisp#L35
-[markdownify]: https://github.com/can3p/cl-journal/blob/5659a99e89cc392fbd56ee3659e70ee8743e2b3e/src/markdownify.lisp
-[cl-journal merge]: https://github.com/can3p/cl-journal/blob/5659a99e89cc392fbd56ee3659e70ee8743e2b3e/src/markdownify.lisp#L243
-[markdown]: https://github.com/can3p/cl-journal/blob/5659a99e89cc392fbd56ee3659e70ee8743e2b3e/src/markdown.lisp
-[main]: https://github.com/can3p/cl-journal/blob/5659a99e89cc392fbd56ee3659e70ee8743e2b3e/src/main.lisp
-[syncitems]: https://www.livejournal.com/doc/server/ljp.csp.xml-rpc.syncitems.html
-[getevents]: https://www.livejournal.com/doc/server/ljp.csp.xml-rpc.getevents.html
-[sync_logic]: https://github.com/can3p/cl-journal/commit/93695d3b0de4a9cdb37ee7b79a30de5bd2ed0370
-[cl-journal.t]: https://github.com/can3p/cl-journal/blob/5659a99e89cc392fbd56ee3659e70ee8743e2b3e/t/cl-journal.lisp#L96
-[ljprotocol]: https://github.com/apparentlymart/livejournal/blob/master/cgi-bin/ljprotocol.pl
-
-[reddit slugify]: https://www.reddit.com/r/Common_Lisp/comments/67neph/clslug_slugify_uris_camelcase_remove_accentuation/
 [blog repo]: https://github.com/can3p/can3p.github.io/issues
 [cl-journal repo]: https://github.com/can3p/cl-journal/issues
+[cl-journal]: https://can3p.github.io/cl-journal/
+[force output]: https://stackoverflow.com/questions/19204332/slime-prints-my-format-calls-only-when-called-function-ends
+[libsecret]: https://wiki.gnome.org/Projects/Libsecret
+[mac os security]: https://www.netmeister.org/blog/keychain-passwords.html
+[roswell script]: https://github.com/can3p/cl-journal/blob/5659a99e89cc392fbd56ee3659e70ee8743e2b3e/roswell/cl-journal.ros
+[buildapp script]: https://github.com/can3p/cl-journal/blob/5659a99e89cc392fbd56ee3659e70ee8743e2b3e/Makefile
+[buildapp]: https://www.xach.com/lisp/buildapp/
+[main package]: https://github.com/can3p/cl-journal/blob/5659a99e89cc392fbd56ee3659e70ee8743e2b3e/src/main.lisp
+[cl-brewer]: https://github.com/can3p/cl-brewer
+[magic-ed]: https://github.com/sanel/magic-ed

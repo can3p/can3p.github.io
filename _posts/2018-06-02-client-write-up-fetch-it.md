@@ -73,8 +73,8 @@ allows any series of keys:
 ```
 
 Another two functions are `partial` and `print-and-return`. Name of
-the first is self-explanatory and the next one accepts a value, prints
-it and immediately returns it. This is useful in the middle of
+the one first is self-explanatory and the next one accepts a value,
+prints it and immediately returns it. This is useful in the middle of
 threading macro call, because it allows printing intermediary steps in
 the computation.
 
@@ -134,10 +134,10 @@ along the way, and I had to disable it in order to get a properly
 readable way.
 
 This decision had consequences in a sense that now I couldn't download
-different types of posts in one batch - Livejournal api returned an error
-in this case. The beast I ended up writing is called
-`lj-getevents-multimode` you can check it out in [lj-api][lj-api]. I
-baked in a couple of assumptions in the code:
+different types of posts in one batch - Livejournal api returned an
+error in this case. The beast I ended up writing is called
+`lj-getevents-multimode` you can check it out in [lj-api][lj-api
+multimode]. I baked in a couple of assumptions in the code:
 
 * One of the api versions (Unicode one) was much more probable
 * If the post had one version, the next one had a high chance of having
@@ -216,7 +216,7 @@ To be frank sync protocol didn't come for free to me. Too many moving
 parts and conditions. And while most of the code base has been written
 in a pure leisure fashion without a single test, I decided to build
 new features starting from fetch with at least some coverage. And I
-chose `prove` as a framework of choice.
+chose [prove][prove] as a framework of choice.
 
 The most annoying bit of this framework is it's default reporter which
 uses escape control sequences for colors and emacs requires some
@@ -261,8 +261,7 @@ function, say `foo` and have it return `(1 2 3)` on the first call and
    nil
    )
    (some)
-   (code)
-   (block))
+   (code))
 ```
 
 Macro allows generating a lambda function for mockingbird that has a
@@ -296,30 +295,11 @@ I managed to write something that actually looks like useful
 thing. You can check the [tests][cl-journal.t] for this definition and
 real-world usage.
 
+Now, let's merge.
 
-[roswell script]: https://github.com/can3p/cl-journal/blob/5659a99e89cc392fbd56ee3659e70ee8743e2b3e/roswell/cl-journal.ros
-[buildapp script]: https://github.com/can3p/cl-journal/blob/5659a99e89cc392fbd56ee3659e70ee8743e2b3e/Makefile
-[main package]: https://github.com/can3p/cl-journal/blob/5659a99e89cc392fbd56ee3659e70ee8743e2b3e/src/main.lisp
-[cl-brewer]: https://github.com/can3p/cl-brewer
-[cl-journal]: https://github.com/can3p/cl-journal
-[magic-ed]: https://github.com/sanel/magic-ed
-[xml-rpc]: https://www.livejournal.com/doc/server/ljp.csp.xml-rpc.protocol.html
-[s-xml-rpc]: https://common-lisp.net/project/s-xml-rpc/
-[rpc4cl]: https://github.com/pidu/rpc4cl
-[cl-arrows]: https://github.com/nightfly19/cl-arrows
-[lj-api]: https://github.com/can3p/cl-journal/blob/5659a99e89cc392fbd56ee3659e70ee8743e2b3e/src/lj-api.lisp
-[db]: https://github.com/can3p/cl-journal/blob/5659a99e89cc392fbd56ee3659e70ee8743e2b3e/src/db.lisp
-[file-api]: https://github.com/can3p/cl-journal/blob/5659a99e89cc392fbd56ee3659e70ee8743e2b3e/src/file-api.lisp#L35
-[markdownify]: https://github.com/can3p/cl-journal/blob/5659a99e89cc392fbd56ee3659e70ee8743e2b3e/src/markdownify.lisp
-[cl-journal merge]: https://github.com/can3p/cl-journal/blob/5659a99e89cc392fbd56ee3659e70ee8743e2b3e/src/markdownify.lisp#L243
-[markdown]: https://github.com/can3p/cl-journal/blob/5659a99e89cc392fbd56ee3659e70ee8743e2b3e/src/markdown.lisp
-[main]: https://github.com/can3p/cl-journal/blob/5659a99e89cc392fbd56ee3659e70ee8743e2b3e/src/main.lisp
 [syncitems]: https://www.livejournal.com/doc/server/ljp.csp.xml-rpc.syncitems.html
-[getevents]: https://www.livejournal.com/doc/server/ljp.csp.xml-rpc.getevents.html
 [sync_logic]: https://github.com/can3p/cl-journal/commit/93695d3b0de4a9cdb37ee7b79a30de5bd2ed0370
+[lj-api]: https://github.com/can3p/cl-journal/blob/5659a99e89cc392fbd56ee3659e70ee8743e2b3e/src/lj-api.lisp
+[lj-api multimode]: https://github.com/can3p/cl-journal/blob/5659a99e89cc392fbd56ee3659e70ee8743e2b3e/src/lj-api.lisp#L85
+[prove]: https://github.com/fukamachi/prove
 [cl-journal.t]: https://github.com/can3p/cl-journal/blob/5659a99e89cc392fbd56ee3659e70ee8743e2b3e/t/cl-journal.lisp#L96
-[ljprotocol]: https://github.com/apparentlymart/livejournal/blob/master/cgi-bin/ljprotocol.pl
-
-[reddit slugify]: https://www.reddit.com/r/Common_Lisp/comments/67neph/clslug_slugify_uris_camelcase_remove_accentuation/
-[blog repo]: https://github.com/can3p/can3p.github.io/issues
-[cl-journal repo]: https://github.com/can3p/cl-journal/issues

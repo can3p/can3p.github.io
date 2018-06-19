@@ -105,7 +105,7 @@ function exploits this fact:
 ```
 
 Setting timezone doesn't have any special meaning there, it's just
-some stable values that allows us to compare timestamps. The threshold
+some stable value that allows us to compare timestamps. The threshold
 is there to filter out small inconsistencies between time stamps.
 
 After this was done I had a clear way to get posts to merge and it
@@ -182,15 +182,15 @@ information to the `lj-embed` and turn it into something like
 `<lj-embed source="youtube" vid="1bU7COLWJE0">` which was totally
 enough to restore original embed code.
 
-In order to put that together, I looked for an appropriate html parsing
-library and after a couple of experiments it turned out that `plump`
-library was completely sufficient for the purpose. The trick is that
-`plump` can not only serialize html but also print it back and this is
-where it appeared to be super easy to plug in and turn html generation
-into markdown generation. Serialization is actually done by one
-generic function, `plump-dom:serialize-object` and Common Lisp
-generics and auxiliary methods made it trivial to achieve desired
-behavior.
+In order to put that together, I looked for an appropriate html
+parsing library and after a couple of experiments it turned out that
+[plump][plump] library was completely sufficient for the purpose. The
+trick is that `plump` can not only parse html but also serialize it
+back and this is where it appeared to be super easy to plug in and
+turn html generation into markdown generation. Serialization is
+actually done by one generic function, `plump-dom:serialize-object`
+and Common Lisp generics and auxiliary methods made it trivial to
+achieve desired behavior.
 
 First, I was able to target only tags I was interested in by
 specifying the type of the first argument, which represented the
@@ -234,7 +234,7 @@ can return back to this method to do any conversions we're interested
 in for the child nodes of the paragraph.
 
 Also, another awesome part of this api is that `serialize-object`
-doesn't return a string, it prints to the stream and that means that
+doesn't return a string, it prints to a stream and that means that
 we don't need to waste our time with doing string concatenation and
 related housekeeping but we are still in full control of the fate of
 the content to be printed.
@@ -251,11 +251,11 @@ only because I was already too tired and lazy to come up with smart
 solutions and the only thing I cared about was to make enough test
 cases and make them pass.
 
-One library that I found super useful at this step was `cl-strings`
-that provides basic string manipulation utilities that all languages
-except Common Lisp provide out of the box. Of course, I could have
-used `ppcre` but `cl-strings` just did the job and again made it
-trivial.
+One library that I found super useful at this step was
+[cl-strings][cl-strings] that provides basic string manipulation
+utilities that all languages except Common Lisp provide out of the
+box. Of course, I could have used `cl-ppcre` but `cl-strings` just did
+the job and again made the logic trivial.
 
 I can say that it was magically simple for me due to how beautifully
 different Common Lisp played together in api. And `plump` is awesome
@@ -271,9 +271,9 @@ filename `YYYY-MM-DD-post-name.md`. `post-name` was completely
 arbitrary and for reverse action I decided to generate it from the
 title. I almost decided to write such a library myself but then
 stumbled upon [reddit post][reddit slugify] where author presented
-`cl-slug` library which solved exactly this problem and not only for
-English but also for a number of other languages including
-Russian. Thank you `author`!
+[cl-slug][cl-slug] library which solved exactly this problem and not
+only for English but also for a number of other languages including
+Russian. Thank you André!
 
 After slug was there I had to ensure the uniqueness of the filename.
 final logic turned out to be pretty straightforward: generate base in
@@ -313,7 +313,7 @@ again with a little modification of `:key-sub` parameter that allowed
 to have anything from the post as a key. In this case, using
 `filename` as a key made generation logic really simple.
 
-Now, I have all parts in place - I had all posts fetched from the
+Now I have all parts in place - all posts could be fetched from the
 server, I could determine which posts were updated remotely or just
 didn't exist locally and I could convert remote representation back to
 the markdown text (I omitted the code that turned fields into a header
@@ -377,30 +377,10 @@ incorporate all the changes back. And what's even cooler, now the client
 can be used for any blog and from the day one it's possible to get all
 posts offline and work as if you were using `cl-journal` forever.
 
-
-[roswell script]: https://github.com/can3p/cl-journal/blob/5659a99e89cc392fbd56ee3659e70ee8743e2b3e/roswell/cl-journal.ros
-[buildapp script]: https://github.com/can3p/cl-journal/blob/5659a99e89cc392fbd56ee3659e70ee8743e2b3e/Makefile
-[main package]: https://github.com/can3p/cl-journal/blob/5659a99e89cc392fbd56ee3659e70ee8743e2b3e/src/main.lisp
-[cl-brewer]: https://github.com/can3p/cl-brewer
-[cl-journal]: https://github.com/can3p/cl-journal
-[magic-ed]: https://github.com/sanel/magic-ed
-[xml-rpc]: https://www.livejournal.com/doc/server/ljp.csp.xml-rpc.protocol.html
-[s-xml-rpc]: https://common-lisp.net/project/s-xml-rpc/
-[rpc4cl]: https://github.com/pidu/rpc4cl
-[cl-arrows]: https://github.com/nightfly19/cl-arrows
-[lj-api]: https://github.com/can3p/cl-journal/blob/5659a99e89cc392fbd56ee3659e70ee8743e2b3e/src/lj-api.lisp
-[db]: https://github.com/can3p/cl-journal/blob/5659a99e89cc392fbd56ee3659e70ee8743e2b3e/src/db.lisp
-[file-api]: https://github.com/can3p/cl-journal/blob/5659a99e89cc392fbd56ee3659e70ee8743e2b3e/src/file-api.lisp#L35
-[markdownify]: https://github.com/can3p/cl-journal/blob/5659a99e89cc392fbd56ee3659e70ee8743e2b3e/src/markdownify.lisp
-[cl-journal merge]: https://github.com/can3p/cl-journal/blob/5659a99e89cc392fbd56ee3659e70ee8743e2b3e/src/markdownify.lisp#L243
-[markdown]: https://github.com/can3p/cl-journal/blob/5659a99e89cc392fbd56ee3659e70ee8743e2b3e/src/markdown.lisp
-[main]: https://github.com/can3p/cl-journal/blob/5659a99e89cc392fbd56ee3659e70ee8743e2b3e/src/main.lisp
-[syncitems]: https://www.livejournal.com/doc/server/ljp.csp.xml-rpc.syncitems.html
-[getevents]: https://www.livejournal.com/doc/server/ljp.csp.xml-rpc.getevents.html
-[sync_logic]: https://github.com/can3p/cl-journal/commit/93695d3b0de4a9cdb37ee7b79a30de5bd2ed0370
-[cl-journal.t]: https://github.com/can3p/cl-journal/blob/5659a99e89cc392fbd56ee3659e70ee8743e2b3e/t/cl-journal.lisp#L96
+[file-api]: https://github.com/can3p/cl-journal/blob/5659a99e89cc392fbd56ee3659e70ee8743e2b3e/src/file-api.lisp#L71
 [ljprotocol]: https://github.com/apparentlymart/livejournal/blob/master/cgi-bin/ljprotocol.pl
-
-[reddit slugify]: https://www.reddit.com/r/Common_Lisp/comments/67neph/clslug_slugify_uris_camelcase_remove_accentuation/
-[blog repo]: https://github.com/can3p/can3p.github.io/issues
-[cl-journal repo]: https://github.com/can3p/cl-journal/issues
+[plump]: https://shinmera.github.io/plump/
+[markdownify]: https://github.com/can3p/cl-journal/blob/5659a99e89cc392fbd56ee3659e70ee8743e2b3e/src/markdownify.lisp
+[cl-strings]: https://github.com/diogoalexandrefranco/cl-strings
+[cl-slug]: https://github.com/EuAndreh/cl-slug
+[cl-journal merge]: https://github.com/can3p/cl-journal/blob/5659a99e89cc392fbd56ee3659e70ee8743e2b3e/src/cl-journal.lisp#L243
