@@ -7,7 +7,7 @@ layout: default
   <span class="post-date">{{ page.date | date_to_string }}</span>
   {% if page.tag %}
     <p class="post-series">All posts from the series can be found
-    <a href="/blog/tag/{{ page.tag }}">here</a></p>
+    <a href="/tag/{{ page.tag }}/">here</a></p>
   {% endif %}
   {{ content }}
 </div>
