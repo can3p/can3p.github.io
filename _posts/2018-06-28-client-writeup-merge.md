@@ -59,16 +59,12 @@ dates in a sense that all the timestamps it returns are in format
 the same timezone and `getevents` call was one particular example
 where this invariant didn't hold, or to say it more precisely, not
 always.  It seems like this api call is served by the two servers in
-two different dcs with their local timezone set. Load balancer gives
-the request randomly to one or another which means that two subsequent
-calls may or may not have a timestamp difference in a couple of
-hours. The earlier one matches that of `syncitems`. To be honest, at
-this stage I should have ditched `getevents` in favour of `syncitems`
-but instead I did a hack: we just need to keep calling `getevents`
+two different dcs with their local timezone set. `syncitems` seemed
+to work with UTC timezone and I started looking around in search
+of something that can work. First solution I came up with was
+rather horrible: we just need to keep calling `getevents`
 till we get two different timestamps and from that point we can take a
 lower one and save it along the post.
-
-This is how this horror looks like:
 
 ```common_lisp
 (defun lj-get-server-ts ()
@@ -89,7 +85,7 @@ allows to set a local binding `a` and then execute loop body and
 return from it with `return`.
 
 `older-p` is also interesting. I didn't find a simple way to compare
-`YYYY-MM-DD HH:MM:SS` timestamps, however, `local-time` library
+`YYYY-MM-DD HH:MM:SS` timestamps, however, [local-time][local-time] library
 provided a way to compare it's time object instances. And this helper
 function exploits this fact:
 
@@ -107,6 +103,49 @@ function exploits this fact:
 Setting timezone doesn't have any special meaning there, it's just
 some stable value that allows us to compare timestamps. The threshold
 is there to filter out small inconsistencies between time stamps.
+
+While it worked at the beginning, later I was punished for my
+naiveness and `getevents` started returning mostly non UTC datetime. I
+decided to search more and finally understood that I could as well
+just use unix timestamp that some of the calls return and then format
+it according to timezone of my liking. `local-time` library was really
+helpful in this sense. Timestamp formatting can be implemented as easy
+as:
+
+```common_lisp
+(defparameter *livejournal-timestamp-format* (list
+                                 :year
+                                 "-"
+                                 (list :month 2)
+                                 "-"
+                                 (list :day 2)
+                                 " "
+                                 (list :hour 2)
+                                 ":"
+                                 (list :min 2)
+                                 ":"
+                                 (list :sec 2)
+                                 ))
+
+(defun format-unix-timestamp (ts)
+  (format-timestring nil (unix-to-timestamp ts)
+                     :format *livejournal-timestamp-format*
+                      ;; looks like utc zone is what syncitems use
+                     :timezone +utc-zone+))
+```
+
+Initially I used `defconstant` there, but every copilation resulted in
+the restart and sbcl even [mentions][defconstant] this behaviour.  I
+gave up and moved on to `lj-get-server-ts` function that now looked
+much simpler:
+
+```common_lisp
+(defun lj-get-server-ts ()
+  (->
+   (rpc-call "LJ.XMLRPC.getchallenge")
+   (getf :server_time)
+   (format-unix-timestamp)))
+```
 
 After this was done I had a clear way to get posts to merge and it
 appeared to be an interesting exercise! Fundamentally speaking there
@@ -384,3 +423,5 @@ posts offline and work as if you were using `cl-journal` forever.
 [cl-strings]: https://github.com/diogoalexandrefranco/cl-strings
 [cl-slug]: https://github.com/EuAndreh/cl-slug
 [cl-journal merge]: https://github.com/can3p/cl-journal/blob/5659a99e89cc392fbd56ee3659e70ee8743e2b3e/src/cl-journal.lisp#L243
+[defconstant]: http://www.sbcl.org/manual/#Defining-Constants-1
+[local-time]: https://common-lisp.net/project/local-time/
