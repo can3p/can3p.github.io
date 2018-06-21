@@ -490,3 +490,10 @@ a.pagination-item:hover {
 .link-review {
   margin-top: 20px;
 }
+
+/** custom styling */
+
+.post-series {
+  padding-left: 25px;
+  border-left: 5px solid #ffb3b3;
+}
