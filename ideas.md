@@ -15,3 +15,4 @@ List of ideas for someone to implement in no particular order
 * Common lisp torrent client
 * JS format and generics implementation
 * Social network with privacy and non intrusion principles - no suggestions, no ads, fine-grained privacy controls, split between friends and people you read, simplified user interface and possible federation
+*
