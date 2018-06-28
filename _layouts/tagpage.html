@@ -5,8 +5,13 @@ layout: default
 <div class="links">
   <h1>Series: {{ page.title }}</h1>
 
+
+  {% if content %}
+    {{ content }}
+  {% endif %}
+
   {% assign curDate = site.time | date: '%s' %}
-  {% for post in site.tags[page.tag] %}
+  {% for post in site.tags[page.tag] reversed %}
     {% assign postStartDate = post.date | date: '%s' %}
     {% if postStartDate <= curDate %}
       {% capture day %}{{ post.date | date: '%m%d%Y' }}{% endcapture %}
