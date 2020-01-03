@@ -5,7 +5,8 @@
 ~~~bash
 $ sudo apt install build-essential ruby-dev zlib1g-dev
 $ sudo gem install bundler
-$ bundle install --path vendor/bundle
+$ bundle config set path vendor/bundle
+$ bundle install
 ~~~
 
 
