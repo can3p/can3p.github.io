@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "What do you read?"
-keywords: "web"
+keywords: "community"
 ---
 
 There are some habits that I developed during my life
