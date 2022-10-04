@@ -12,6 +12,7 @@ paginate:         1
 baseurl:          ""
 description:     "Rants about programming - javascript, clojure and friends"
 keywords:        "html, javascript, clojure, programming"
+timezone:        Europe/Amsterdam
 author:
   name:           Dmitry Petrov
   url:            https://can3p.github.io
